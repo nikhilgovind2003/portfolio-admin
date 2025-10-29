@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { DataTable } from '@/components/shared/DataTable';
@@ -8,12 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { apiService } from '@/api/apiService';
 
 interface Skill {
   id: string;
   name: string;
-  level: 'beginner' | 'intermediate' | 'advanced' | 'expert';
-  category: string;
+  level?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  category?: string;
 }
 
 const Skills = () => {
@@ -25,6 +26,21 @@ const Skills = () => {
     level: 'intermediate',
     category: '',
   });
+
+
+
+  
+ useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        const data = await apiService.getAll("skills");
+        setSkills(data);
+      } catch (err: any) {
+        toast.error("Failed to load skills");
+      }
+    };
+    fetchSkills();
+  }, []);
 
   const columns = [
     { header: 'Name', accessor: 'name' as keyof Skill },
@@ -116,7 +132,7 @@ const Skills = () => {
                   required
                 />
               </div>
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="level">Proficiency Level</Label>
                 <Select value={formData.level} onValueChange={(value: any) => setFormData({ ...formData, level: value })}>
                   <SelectTrigger>
@@ -129,8 +145,8 @@ const Skills = () => {
                     <SelectItem value="expert">Expert</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-2">
+              </div> */}
+              {/* <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
                 <Input
                   id="category"
@@ -139,7 +155,7 @@ const Skills = () => {
                   placeholder="e.g., Frontend, Backend, DevOps"
                   required
                 />
-              </div>
+              </div> */}
             </div>
             <DialogFooter className="mt-6">
               <Button type="button" variant="outline" onClick={() => { setIsDialogOpen(false); resetForm(); }}>
