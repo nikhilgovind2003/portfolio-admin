@@ -6,17 +6,7 @@ import { FormDialog, FormFieldConfig } from '@/components/shared/FormDialog';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-
-const projectSchema = z.object({
-  title: z.string().min(2, 'Title must be at least 2 characters').max(200),
-  description: z.string().min(10, 'Description must be at least 10 characters').max(1000),
-  skills: z.string().max(500, 'Skills must be less than 500 characters'),
-  technologies: z.string().max(500, 'Technologies must be less than 500 characters'),
-  media_path: z.string().optional(),
-  project_link: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-  github_link: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-});
+import { projectSchema, ProjectFormData } from '@/schemas/projectSchema';
 
 interface Project {
   id: string;
@@ -44,7 +34,7 @@ const Projects = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
 
-  const form = useForm<z.infer<typeof projectSchema>>({
+  const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
       title: '',
@@ -70,7 +60,7 @@ const Projects = () => {
     { header: 'Technologies', accessor: 'technologies' as keyof Project },
   ];
 
-  const handleSubmit = (data: z.infer<typeof projectSchema>) => {
+  const handleSubmit = (data: ProjectFormData) => {
     const projectData: Project = {
       id: editingProject?.id || crypto.randomUUID(),
       title: data.title,

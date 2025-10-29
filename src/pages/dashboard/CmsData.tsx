@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -8,19 +8,7 @@ import { toast } from 'sonner';
 import { apiService } from '@/api/apiService';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useState } from 'react';
-
-const cmsSchema = z.object({
-  title: z.string().min(2, 'Title must be at least 2 characters').max(200),
-  slug: z.string().min(2, 'Slug must be at least 2 characters').max(200),
-  type: z.enum(['page', 'post', 'article', 'section']),
-  status: z.enum(['draft', 'published', 'archived']),
-  content: z.string().min(10, 'Content must be at least 10 characters').max(5000),
-  excerpt: z.string().max(500).optional(),
-  metaTitle: z.string().max(60, 'Meta title must be less than 60 characters').optional(),
-  metaDescription: z.string().max(160, 'Meta description must be less than 160 characters').optional(),
-});
+import { cmsSchema, CmsFormData } from '@/schemas/cmsSchema';
 
 interface CmsEntry {
   _id?: string;
@@ -37,7 +25,7 @@ interface CmsEntry {
 const CmsData = () => {
   const [isExisting, setIsExisting] = useState(false);
 
-  const form = useForm<z.infer<typeof cmsSchema>>({
+  const form = useForm<CmsFormData>({
     resolver: zodResolver(cmsSchema),
     defaultValues: {
       title: '',
@@ -67,7 +55,7 @@ const CmsData = () => {
     fetchCmsData();
   }, []);
 
-  const handleSubmit = async (data: z.infer<typeof cmsSchema>) => {
+  const handleSubmit = async (data: CmsFormData) => {
     try {
       const formDataWithId = form.getValues() as CmsEntry;
       if (isExisting && formDataWithId._id) {

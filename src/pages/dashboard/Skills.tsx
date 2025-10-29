@@ -8,13 +8,7 @@ import { toast } from 'sonner';
 import { apiService } from '@/api/apiService';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-
-const skillSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters').max(100),
-  level: z.enum(['beginner', 'intermediate', 'advanced', 'expert']).optional(),
-  category: z.string().max(100).optional(),
-});
+import { skillSchema, SkillFormData } from '@/schemas/skillSchema';
 
 interface Skill {
   id: string;
@@ -44,7 +38,7 @@ const Skills = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
 
-  const form = useForm<z.infer<typeof skillSchema>>({
+  const form = useForm<SkillFormData>({
     resolver: zodResolver(skillSchema),
     defaultValues: {
       name: '',
@@ -83,7 +77,7 @@ const Skills = () => {
     { header: 'Category', accessor: 'category' as keyof Skill },
   ];
 
-  const handleSubmit = (data: z.infer<typeof skillSchema>) => {
+  const handleSubmit = (data: SkillFormData) => {
     const skillData: Skill = {
       id: editingSkill?.id || crypto.randomUUID(),
       name: data.name,

@@ -2,30 +2,58 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { DataTable } from '@/components/shared/DataTable';
+import { FormDialog, FormFieldConfig } from '@/components/shared/FormDialog';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { userSchema, UserFormData } from '@/schemas/userSchema';
 
 interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role: 'admin' | 'moderator' | 'user';
   status: 'active' | 'inactive';
 }
+
+const formFields: FormFieldConfig[] = [
+  { name: 'name', label: 'Name', type: 'text', placeholder: 'John Doe' },
+  { name: 'email', label: 'Email', type: 'email', placeholder: 'john@example.com' },
+  { 
+    name: 'role', 
+    label: 'Role', 
+    type: 'select',
+    options: [
+      { label: 'Admin', value: 'admin' },
+      { label: 'Moderator', value: 'moderator' },
+      { label: 'User', value: 'user' },
+    ]
+  },
+  { 
+    name: 'status', 
+    label: 'Status', 
+    type: 'select',
+    options: [
+      { label: 'Active', value: 'active' },
+      { label: 'Inactive', value: 'inactive' },
+    ]
+  },
+];
 
 const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [formData, setFormData] = useState<Omit<User, 'id'>>({ 
-    name: '', 
-    email: '', 
-    role: 'user', 
-    status: 'active' 
+
+  const form = useForm<UserFormData>({
+    resolver: zodResolver(userSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      role: 'user',
+      status: 'active',
+    },
   });
 
   const columns = [
@@ -47,13 +75,20 @@ const Users = () => {
     },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (data: UserFormData) => {
+    const userData: User = {
+      id: editingUser?.id || crypto.randomUUID(),
+      name: data.name,
+      email: data.email,
+      role: data.role,
+      status: data.status,
+    };
+
     if (editingUser) {
-      setUsers(users.map(u => u.id === editingUser.id ? { ...formData, id: editingUser.id } : u));
+      setUsers(users.map(u => u.id === editingUser.id ? userData : u));
       toast.success('User updated successfully');
     } else {
-      setUsers([...users, { ...formData, id: crypto.randomUUID() }]);
+      setUsers([...users, userData]);
       toast.success('User created successfully');
     }
     setIsDialogOpen(false);
@@ -62,7 +97,7 @@ const Users = () => {
 
   const handleEdit = (user: User) => {
     setEditingUser(user);
-    setFormData(user);
+    form.reset(user);
     setIsDialogOpen(true);
   };
 
@@ -72,7 +107,12 @@ const Users = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', role: 'user', status: 'active' });
+    form.reset({
+      name: '',
+      email: '',
+      role: 'user',
+      status: 'active',
+    });
     setEditingUser(null);
   };
 
@@ -96,72 +136,23 @@ const Users = () => {
         onDelete={handleDelete}
       />
 
-      <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingUser ? 'Edit User' : 'Add New User'}</DialogTitle>
-            <DialogDescription>
-              {editingUser ? 'Update user information' : 'Create a new user account'}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="moderator">Moderator</SelectItem>
-                    <SelectItem value="user">User</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select value={formData.status} onValueChange={(value: 'active' | 'inactive') => setFormData({ ...formData, status: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => { setIsDialogOpen(false); resetForm(); }}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                {editingUser ? 'Update' : 'Create'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <FormDialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}
+        title={editingUser ? 'Edit User' : 'Add New User'}
+        description={editingUser ? 'Update user information' : 'Create a new user account'}
+        form={form}
+        onSubmit={handleSubmit}
+        onCancel={() => {
+          setIsDialogOpen(false);
+          resetForm();
+        }}
+        submitLabel={editingUser ? 'Update' : 'Create'}
+        fields={formFields}
+      />
     </div>
   );
 };

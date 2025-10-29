@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { DataTable } from '@/components/shared/DataTable';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { FormDialog, FormFieldConfig } from '@/components/shared/FormDialog';
 import { toast } from 'sonner';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { technologySchema, TechnologyFormData } from '@/schemas/technologySchema';
 
 interface Technology {
   id: string;
@@ -14,11 +15,23 @@ interface Technology {
   projectCount: number;
 }
 
+const formFields: FormFieldConfig[] = [
+  { name: 'name', label: 'Technology Name', type: 'text', placeholder: 'React' },
+  { name: 'category', label: 'Category', type: 'text', placeholder: 'e.g., Framework, Library, Tool' },
+];
+
 const Technologies = () => {
   const [technologies, setTechnologies] = useState<Technology[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTech, setEditingTech] = useState<Technology | null>(null);
-  const [formData, setFormData] = useState({ name: '', category: '' });
+
+  const form = useForm<TechnologyFormData>({
+    resolver: zodResolver(technologySchema),
+    defaultValues: {
+      name: '',
+      category: '',
+    },
+  });
 
   const columns = [
     { header: 'Name', accessor: 'name' as keyof Technology },
@@ -30,17 +43,19 @@ const Technologies = () => {
     },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (data: TechnologyFormData) => {
+    const techData: Technology = {
+      id: editingTech?.id || crypto.randomUUID(),
+      name: data.name,
+      category: data.category,
+      projectCount: editingTech?.projectCount || 0,
+    };
+
     if (editingTech) {
-      setTechnologies(technologies.map(t => 
-        t.id === editingTech.id 
-          ? { ...formData, id: editingTech.id, projectCount: editingTech.projectCount } 
-          : t
-      ));
+      setTechnologies(technologies.map(t => t.id === editingTech.id ? techData : t));
       toast.success('Technology updated successfully');
     } else {
-      setTechnologies([...technologies, { ...formData, id: crypto.randomUUID(), projectCount: 0 }]);
+      setTechnologies([...technologies, techData]);
       toast.success('Technology created successfully');
     }
     setIsDialogOpen(false);
@@ -49,7 +64,7 @@ const Technologies = () => {
 
   const handleEdit = (tech: Technology) => {
     setEditingTech(tech);
-    setFormData({ name: tech.name, category: tech.category });
+    form.reset({ name: tech.name, category: tech.category });
     setIsDialogOpen(true);
   };
 
@@ -59,7 +74,10 @@ const Technologies = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', category: '' });
+    form.reset({
+      name: '',
+      category: '',
+    });
     setEditingTech(null);
   };
 
@@ -83,47 +101,23 @@ const Technologies = () => {
         onDelete={handleDelete}
       />
 
-      <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingTech ? 'Edit Technology' : 'Add New Technology'}</DialogTitle>
-            <DialogDescription>
-              {editingTech ? 'Update technology information' : 'Add a new technology to your stack'}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Technology Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Input
-                  id="category"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  placeholder="e.g., Framework, Library, Tool"
-                  required
-                />
-              </div>
-            </div>
-            <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => { setIsDialogOpen(false); resetForm(); }}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                {editingTech ? 'Update' : 'Create'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <FormDialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}
+        title={editingTech ? 'Edit Technology' : 'Add New Technology'}
+        description={editingTech ? 'Update technology information' : 'Add a new technology to your stack'}
+        form={form}
+        onSubmit={handleSubmit}
+        onCancel={() => {
+          setIsDialogOpen(false);
+          resetForm();
+        }}
+        submitLabel={editingTech ? 'Update' : 'Create'}
+        fields={formFields}
+      />
     </div>
   );
 };
