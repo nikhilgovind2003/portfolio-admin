@@ -5,32 +5,19 @@ import { DataTable } from '@/components/shared/DataTable';
 import { FormDialog, FormFieldConfig } from '@/components/shared/FormDialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { apiService } from '@/api/apiService';
+import { apiService, MEDIA_URL } from '@/api/apiService';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { skillSchema, SkillFormData } from '@/schemas/skillSchema';
-
 interface Skill {
   id: string;
   name: string;
-  level?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
-  category?: string;
+  media_path: string;
 }
 
 const formFields: FormFieldConfig[] = [
   { name: 'name', label: 'Skill Name', type: 'text', placeholder: 'React' },
-  { 
-    name: 'level', 
-    label: 'Proficiency Level', 
-    type: 'select',
-    options: [
-      { label: 'Beginner', value: 'beginner' },
-      { label: 'Intermediate', value: 'intermediate' },
-      { label: 'Advanced', value: 'advanced' },
-      { label: 'Expert', value: 'expert' },
-    ]
-  },
-  { name: 'category', label: 'Category', type: 'text', placeholder: 'e.g., Frontend, Backend, DevOps' },
+  { name: 'media_path', label: 'Skill Image', type: 'file', accept: 'image/*' },
 ];
 
 const Skills = () => {
@@ -42,8 +29,7 @@ const Skills = () => {
     resolver: zodResolver(skillSchema),
     defaultValues: {
       name: '',
-      level: 'intermediate',
-      category: '',
+      media_path: ''
     },
   });
 
@@ -52,49 +38,66 @@ const Skills = () => {
       try {
         const data = await apiService.getAll("skills");
         setSkills(data);
-      } catch (err: any) {
+      } catch (err) {
         toast.error("Failed to load skills");
       }
     };
     fetchSkills();
   }, []);
 
+
+  console.log("SKILLS => ", skills)
   const columns = [
-    { header: 'Name', accessor: 'name' as keyof Skill },
-    { 
-      header: 'Level', 
-      accessor: 'level' as keyof Skill,
-      cell: (value: string) => {
-        const variants: Record<string, 'default' | 'secondary' | 'outline'> = {
-          beginner: 'secondary',
-          intermediate: 'outline',
-          advanced: 'default',
-          expert: 'default',
-        };
-        return <Badge variant={variants[value]}>{value}</Badge>;
-      }
+    {
+      header: 'Image',
+      accessor: 'media_path',
+      cell: (value: string, row: any) => {
+
+        return value ? (
+          <img
+            src={`http://localhost:4000${value}`}
+            alt={row.name || 'Skill Image'}
+            className="w-12 h-12 rounded-md object-cover border shadow-sm"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-md bg-gray-100 flex flex-col items-center justify-center border">
+            <span className="text-xs text-gray-400">No</span>
+            <span className="text-xs text-gray-400">Image</span>
+          </div>
+        );
+      },
     },
-    { header: 'Category', accessor: 'category' as keyof Skill },
+    { header: 'Name', accessor: 'skills' },
+    { header: 'Sort Order', accessor: 'sort_order' },
+    { header: 'Status', accessor: 'status' },
   ];
 
-  const handleSubmit = (data: SkillFormData) => {
-    const skillData: Skill = {
-      id: editingSkill?.id || crypto.randomUUID(),
-      name: data.name,
-      level: data.level,
-      category: data.category,
-    };
+const handleSubmit = async (data: SkillFormData) => {
+  try {
+    const formData = new FormData();
 
-    if (editingSkill) {
-      setSkills(skills.map(s => s.id === editingSkill.id ? skillData : s));
-      toast.success('Skill updated successfully');
-    } else {
-      setSkills([...skills, skillData]);
-      toast.success('Skill created successfully');
+    // Append fields
+    formData.append("skills", data.name);
+
+    if (data.media_path && data.media_path instanceof FileList && data.media_path[0]) {
+      formData.append("media_path", data.media_path[0]); // image file
     }
+
+    // ✅ Send to backend using apiService
+    const response = await apiService.create("skills", formData, true);
+
+    // ✅ Update local state after successful save
+    setSkills((prev) => [...prev, response]);
+
+    toast.success("Skill added successfully!");
     setIsDialogOpen(false);
     resetForm();
-  };
+  } catch (error) {
+    console.error("Failed to add skill:", error);
+    toast.error("Failed to add skill. Please try again.");
+  }
+};
 
   const handleEdit = (skill: Skill) => {
     setEditingSkill(skill);

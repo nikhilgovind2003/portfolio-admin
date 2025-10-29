@@ -7,12 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { UseFormReturn } from 'react-hook-form';
 
-export type FormFieldType = 'text' | 'email' | 'password' | 'textarea' | 'select' | 'number' | 'url';
+export type FormFieldType = 'text' | 'email' | 'password' | 'textarea' | 'select' | 'number' | 'url'| 'file';
 
 export interface FormFieldConfig {
   name: string;
   label: string;
   type: FormFieldType;
+  accept?: string;
   placeholder?: string;
   options?: { label: string; value: string }[];
   rows?: number;

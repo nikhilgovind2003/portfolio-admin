@@ -11,6 +11,9 @@ export const skillSchema = z.object({
     .max(100, 'Category must be less than 100 characters')
     .optional()
     .or(z.literal('')),
+  media_path: z.any().optional(), 
+  
+  
 });
 
 export type SkillFormData = z.infer<typeof skillSchema>;

@@ -49,8 +49,8 @@ const Projects = () => {
 
   const columns = [
     { header: 'Title', accessor: 'title' as keyof Project },
-    { 
-      header: 'Description', 
+    {
+      header: 'Description',
       accessor: 'description' as keyof Project,
       cell: (value: string) => (
         <div className="max-w-md truncate">{value}</div>

@@ -1,6 +1,7 @@
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+export const MEDIA_URL = import.meta.env.VITE_API_URL;  // or hardcoded?
 
 export const apiService = {
   getAll: async (model: string) => {
@@ -8,9 +9,15 @@ export const apiService = {
     return data;
   },
 
-  create: async (model: string, payload: any) => {
-    const { data } = await axios.post(`${API_BASE_URL}/${model}`, payload);
-    return data;
+  create: async (endpoint, data, isFormData = false) => {
+     const config = {
+      headers: isFormData
+        ? { "Content-Type": "multipart/form-data" }
+        : { "Content-Type": "application/json" },
+    };
+
+    const res = await axios.post(`${API_BASE_URL}/${endpoint}`, data, config);
+    return res.data;
   },
 
   update: async (model: string, id: string, payload: any) => {
