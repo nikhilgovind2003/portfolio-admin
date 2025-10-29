@@ -2,11 +2,21 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { DataTable } from '@/components/shared/DataTable';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { FormDialog, FormFieldConfig } from '@/components/shared/FormDialog';
 import { toast } from 'sonner';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const projectSchema = z.object({
+  title: z.string().min(2, 'Title must be at least 2 characters').max(200),
+  description: z.string().min(10, 'Description must be at least 10 characters').max(1000),
+  skills: z.string().max(500, 'Skills must be less than 500 characters'),
+  technologies: z.string().max(500, 'Technologies must be less than 500 characters'),
+  media_path: z.string().optional(),
+  project_link: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  github_link: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+});
 
 interface Project {
   id: string;
@@ -19,18 +29,32 @@ interface Project {
   github_link?: string;
 }
 
+const formFields: FormFieldConfig[] = [
+  { name: 'title', label: 'Title', type: 'text', placeholder: 'Project name' },
+  { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Detailed description...', rows: 4 },
+  { name: 'skills', label: 'Skills', type: 'text', placeholder: 'e.g., React, TypeScript' },
+  { name: 'technologies', label: 'Technologies', type: 'text', placeholder: 'e.g., Node.js, MongoDB' },
+  { name: 'media_path', label: 'Media Path', type: 'text', placeholder: '/images/project.png' },
+  { name: 'project_link', label: 'Project Link', type: 'url', placeholder: 'https://example.com' },
+  { name: 'github_link', label: 'GitHub Link', type: 'url', placeholder: 'https://github.com/username/repo' },
+];
+
 const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [formData, setFormData] = useState<Omit<Project, 'id'>>({
-    title: '',
-    description: '',
-    skills: '',
-    technologies: '',
-    media_path: '',
-    project_link: '',
-    github_link: '',
+
+  const form = useForm<z.infer<typeof projectSchema>>({
+    resolver: zodResolver(projectSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+      skills: '',
+      technologies: '',
+      media_path: '',
+      project_link: '',
+      github_link: '',
+    },
   });
 
   const columns = [
@@ -46,13 +70,23 @@ const Projects = () => {
     { header: 'Technologies', accessor: 'technologies' as keyof Project },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (data: z.infer<typeof projectSchema>) => {
+    const projectData: Project = {
+      id: editingProject?.id || crypto.randomUUID(),
+      title: data.title,
+      description: data.description,
+      skills: data.skills,
+      technologies: data.technologies,
+      media_path: data.media_path || '',
+      project_link: data.project_link || '',
+      github_link: data.github_link || '',
+    };
+
     if (editingProject) {
-      setProjects(projects.map(p => p.id === editingProject.id ? { ...formData, id: editingProject.id } : p));
+      setProjects(projects.map(p => p.id === editingProject.id ? projectData : p));
       toast.success('Project updated successfully');
     } else {
-      setProjects([...projects, { ...formData, id: crypto.randomUUID() }]);
+      setProjects([...projects, projectData]);
       toast.success('Project created successfully');
     }
     setIsDialogOpen(false);
@@ -61,7 +95,7 @@ const Projects = () => {
 
   const handleEdit = (project: Project) => {
     setEditingProject(project);
-    setFormData(project);
+    form.reset(project);
     setIsDialogOpen(true);
   };
 
@@ -71,7 +105,7 @@ const Projects = () => {
   };
 
   const resetForm = () => {
-    setFormData({
+    form.reset({
       title: '',
       description: '',
       skills: '',
@@ -103,94 +137,23 @@ const Projects = () => {
         onDelete={handleDelete}
       />
 
-      <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingProject ? 'Edit Project' : 'Add New Project'}</DialogTitle>
-            <DialogDescription>
-              {editingProject ? 'Update project information' : 'Create a new project entry'}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  required
-                  rows={4}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="skills">Skills</Label>
-                <Input
-                  id="skills"
-                  value={formData.skills}
-                  onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
-                  placeholder="e.g., React, TypeScript"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="technologies">Technologies</Label>
-                <Input
-                  id="technologies"
-                  value={formData.technologies}
-                  onChange={(e) => setFormData({ ...formData, technologies: e.target.value })}
-                  placeholder="e.g., Node.js, MongoDB"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="media_path">Media Path</Label>
-                <Input
-                  id="media_path"
-                  value={formData.media_path}
-                  onChange={(e) => setFormData({ ...formData, media_path: e.target.value })}
-                  placeholder="/images/project.png"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="project_link">Project Link</Label>
-                <Input
-                  id="project_link"
-                  type="url"
-                  value={formData.project_link}
-                  onChange={(e) => setFormData({ ...formData, project_link: e.target.value })}
-                  placeholder="https://example.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="github_link">GitHub Link</Label>
-                <Input
-                  id="github_link"
-                  type="url"
-                  value={formData.github_link}
-                  onChange={(e) => setFormData({ ...formData, github_link: e.target.value })}
-                  placeholder="https://github.com/username/repo"
-                />
-              </div>
-            </div>
-            <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => { setIsDialogOpen(false); resetForm(); }}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                {editingProject ? 'Update' : 'Create'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <FormDialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}
+        title={editingProject ? 'Edit Project' : 'Add New Project'}
+        description={editingProject ? 'Update project information' : 'Create a new project entry'}
+        form={form}
+        onSubmit={handleSubmit}
+        onCancel={() => {
+          setIsDialogOpen(false);
+          resetForm();
+        }}
+        submitLabel={editingProject ? 'Update' : 'Create'}
+        fields={formFields}
+      />
     </div>
   );
 };

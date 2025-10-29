@@ -1,16 +1,33 @@
 import { ReactNode } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { UseFormReturn } from 'react-hook-form';
+
+export type FormFieldType = 'text' | 'email' | 'password' | 'textarea' | 'select' | 'number' | 'url';
+
+export interface FormFieldConfig {
+  name: string;
+  label: string;
+  type: FormFieldType;
+  placeholder?: string;
+  options?: { label: string; value: string }[];
+  rows?: number;
+}
 
 interface FormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
   description: string;
-  onSubmit: (e: React.FormEvent) => void;
+  form: UseFormReturn<any>;
+  onSubmit: (data: any) => void;
   onCancel: () => void;
   submitLabel?: string;
-  children: ReactNode;
+  fields: FormFieldConfig[];
 }
 
 export const FormDialog = ({ 
@@ -18,10 +35,11 @@ export const FormDialog = ({
   onOpenChange, 
   title, 
   description, 
+  form,
   onSubmit, 
   onCancel,
   submitLabel = 'Save',
-  children 
+  fields 
 }: FormDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -30,19 +48,61 @@ export const FormDialog = ({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit}>
-          <div className="space-y-4 py-4">
-            {children}
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-            <Button type="submit">
-              {submitLabel}
-            </Button>
-          </DialogFooter>
-        </form>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="space-y-4 py-4">
+              {fields.map((field) => (
+                <FormField
+                  key={field.name}
+                  control={form.control}
+                  name={field.name}
+                  render={({ field: formField }) => (
+                    <FormItem>
+                      <FormLabel>{field.label}</FormLabel>
+                      <FormControl>
+                        {field.type === 'textarea' ? (
+                          <Textarea
+                            placeholder={field.placeholder}
+                            rows={field.rows || 4}
+                            {...formField}
+                          />
+                        ) : field.type === 'select' && field.options ? (
+                          <Select onValueChange={formField.onChange} value={formField.value}>
+                            <SelectTrigger>
+                              <SelectValue placeholder={field.placeholder} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {field.options.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            type={field.type}
+                            placeholder={field.placeholder}
+                            {...formField}
+                          />
+                        )}
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ))}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                {submitLabel}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

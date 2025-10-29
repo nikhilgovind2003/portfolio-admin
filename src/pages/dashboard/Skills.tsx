@@ -2,13 +2,19 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { DataTable } from '@/components/shared/DataTable';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FormDialog, FormFieldConfig } from '@/components/shared/FormDialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { apiService } from '@/api/apiService';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const skillSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').max(100),
+  level: z.enum(['beginner', 'intermediate', 'advanced', 'expert']).optional(),
+  category: z.string().max(100).optional(),
+});
 
 interface Skill {
   id: string;
@@ -17,20 +23,37 @@ interface Skill {
   category?: string;
 }
 
+const formFields: FormFieldConfig[] = [
+  { name: 'name', label: 'Skill Name', type: 'text', placeholder: 'React' },
+  { 
+    name: 'level', 
+    label: 'Proficiency Level', 
+    type: 'select',
+    options: [
+      { label: 'Beginner', value: 'beginner' },
+      { label: 'Intermediate', value: 'intermediate' },
+      { label: 'Advanced', value: 'advanced' },
+      { label: 'Expert', value: 'expert' },
+    ]
+  },
+  { name: 'category', label: 'Category', type: 'text', placeholder: 'e.g., Frontend, Backend, DevOps' },
+];
+
 const Skills = () => {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
-  const [formData, setFormData] = useState<Omit<Skill, 'id'>>({
-    name: '',
-    level: 'intermediate',
-    category: '',
+
+  const form = useForm<z.infer<typeof skillSchema>>({
+    resolver: zodResolver(skillSchema),
+    defaultValues: {
+      name: '',
+      level: 'intermediate',
+      category: '',
+    },
   });
 
-
-
-  
- useEffect(() => {
+  useEffect(() => {
     const fetchSkills = async () => {
       try {
         const data = await apiService.getAll("skills");
@@ -60,13 +83,19 @@ const Skills = () => {
     { header: 'Category', accessor: 'category' as keyof Skill },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (data: z.infer<typeof skillSchema>) => {
+    const skillData: Skill = {
+      id: editingSkill?.id || crypto.randomUUID(),
+      name: data.name,
+      level: data.level,
+      category: data.category,
+    };
+
     if (editingSkill) {
-      setSkills(skills.map(s => s.id === editingSkill.id ? { ...formData, id: editingSkill.id } : s));
+      setSkills(skills.map(s => s.id === editingSkill.id ? skillData : s));
       toast.success('Skill updated successfully');
     } else {
-      setSkills([...skills, { ...formData, id: crypto.randomUUID() }]);
+      setSkills([...skills, skillData]);
       toast.success('Skill created successfully');
     }
     setIsDialogOpen(false);
@@ -75,7 +104,7 @@ const Skills = () => {
 
   const handleEdit = (skill: Skill) => {
     setEditingSkill(skill);
-    setFormData(skill);
+    form.reset(skill);
     setIsDialogOpen(true);
   };
 
@@ -85,7 +114,7 @@ const Skills = () => {
   };
 
   const resetForm = () => {
-    setFormData({
+    form.reset({
       name: '',
       level: 'intermediate',
       category: '',
@@ -113,61 +142,23 @@ const Skills = () => {
         onDelete={handleDelete}
       />
 
-      <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingSkill ? 'Edit Skill' : 'Add New Skill'}</DialogTitle>
-            <DialogDescription>
-              {editingSkill ? 'Update skill information' : 'Add a new skill to your portfolio'}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Skill Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-              {/* <div className="space-y-2">
-                <Label htmlFor="level">Proficiency Level</Label>
-                <Select value={formData.level} onValueChange={(value: any) => setFormData({ ...formData, level: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="beginner">Beginner</SelectItem>
-                    <SelectItem value="intermediate">Intermediate</SelectItem>
-                    <SelectItem value="advanced">Advanced</SelectItem>
-                    <SelectItem value="expert">Expert</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div> */}
-              {/* <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Input
-                  id="category"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  placeholder="e.g., Frontend, Backend, DevOps"
-                  required
-                />
-              </div> */}
-            </div>
-            <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => { setIsDialogOpen(false); resetForm(); }}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                {editingSkill ? 'Update' : 'Create'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <FormDialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}
+        title={editingSkill ? 'Edit Skill' : 'Add New Skill'}
+        description={editingSkill ? 'Update skill information' : 'Add a new skill to your portfolio'}
+        form={form}
+        onSubmit={handleSubmit}
+        onCancel={() => {
+          setIsDialogOpen(false);
+          resetForm();
+        }}
+        submitLabel={editingSkill ? 'Update' : 'Create'}
+        fields={formFields}
+      />
     </div>
   );
 };
