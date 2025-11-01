@@ -1,19 +1,14 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const skillSchema = z.object({
-  name: z.string()
-    .min(2, 'Skill name must be at least 2 characters')
-    .max(100, 'Skill name must be less than 100 characters'),
-  level: z.enum(['beginner', 'intermediate', 'advanced', 'expert'], {
-    required_error: 'Please select a proficiency level',
-  }).optional(),
-  category: z.string()
-    .max(100, 'Category must be less than 100 characters')
-    .optional()
-    .or(z.literal('')),
-  media_path: z.any().optional(), 
-  
-  
+  name: z
+    .string()
+    .min(2, "Skill name must be at least 2 characters")
+    .max(100, "Skill name must be less than 100 characters"),
+  media_path: z.string().nonempty("Image is required"),
+  media_alt: z.string().nonempty("Image alt is required"),
+  status: z.boolean().default(true),
+  sort_order: z.coerce.number(),
 });
 
 export type SkillFormData = z.infer<typeof skillSchema>;

@@ -22,12 +22,12 @@ import {
 
 const menuItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-  { title: 'Users', url: '/dashboard/users', icon: Users },
   { title: 'CMS Data', url: '/dashboard/cms', icon: FileText },
+  { title: 'Profile', url: '/dashboard/profile', icon: UserCircle },
   { title: 'Projects', url: '/dashboard/projects', icon: FolderKanban },
   { title: 'Skills', url: '/dashboard/skills', icon: Lightbulb },
   { title: 'Technologies', url: '/dashboard/technologies', icon: Code },
-  { title: 'Profile', url: '/dashboard/profile', icon: UserCircle },
+  { title: 'Users', url: '/dashboard/users', icon: Users },
 ];
 
 export const DashboardSidebar = () => {

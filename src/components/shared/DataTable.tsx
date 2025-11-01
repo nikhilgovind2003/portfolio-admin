@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2 } from 'lucide-react';
+import { DeleteDialog } from './DeleteDialog';
 
 interface Column<T> {
   header: string;
@@ -72,13 +73,11 @@ export function DataTable<T extends { id: string }>({
                       </Button>
                     )}
                     {onDelete && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onDelete(row)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <DeleteDialog
+                        id={Number(row.id)}
+                        apiPath="/skills"
+                        onSuccess={() => onDelete(row)}
+                      />
                     )}
                   </TableCell>
                 )}

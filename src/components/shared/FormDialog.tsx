@@ -6,8 +6,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { UseFormReturn } from 'react-hook-form';
+import { Switch } from "@/components/ui/switch";
 
-export type FormFieldType = 'text' | 'email' | 'password' | 'textarea' | 'select' | 'number' | 'url'| 'file';
+export type FormFieldType = 'text' | 'email' | 'password' | 'textarea' | 'select' | 'number' | 'url' | 'file' | "switch";
 
 export interface FormFieldConfig {
   name: string;
@@ -31,16 +32,16 @@ interface FormDialogProps {
   fields: FormFieldConfig[];
 }
 
-export const FormDialog = ({ 
-  open, 
-  onOpenChange, 
-  title, 
-  description, 
+export const FormDialog = ({
+  open,
+  onOpenChange,
+  title,
+  description,
   form,
-  onSubmit, 
+  onSubmit,
   onCancel,
   submitLabel = 'Save',
-  fields 
+  fields
 }: FormDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -61,7 +62,43 @@ export const FormDialog = ({
                     <FormItem>
                       <FormLabel>{field.label}</FormLabel>
                       <FormControl>
-                        {field.type === 'textarea' ? (
+                        {field.type === 'file' ? (
+                          <>
+                            <Input
+                              type="file"
+                              accept={field.accept || 'image/*'}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                formField.onChange(file); // store File object
+                              }}
+                            />
+
+                            {/* ✅ Safe preview handling for both new File and existing URL */}
+                            {formField.value && (
+                              <div className="mt-2">
+                                {formField.value instanceof File ? (
+                                  <img
+                                    src={URL.createObjectURL(formField.value)}
+                                    alt="Preview"
+                                    className="w-24 h-24 object-cover rounded"
+                                  />
+                                ) : (
+                                  <img
+                                    src={
+                                      typeof formField.value === 'string'
+                                        ? formField.value.startsWith('http')
+                                          ? formField.value
+                                          : `http://localhost:4000${formField.value}`
+                                        : ''
+                                    }
+                                    alt="Preview"
+                                    className="w-24 h-24 object-cover rounded"
+                                  />
+                                )}
+                              </div>
+                            )}
+                          </>
+                        ) : field.type === 'textarea' ? (
                           <Textarea
                             placeholder={field.placeholder}
                             rows={field.rows || 4}
@@ -80,6 +117,14 @@ export const FormDialog = ({
                               ))}
                             </SelectContent>
                           </Select>
+                        ) : field.type === 'switch' ? ( // ✅ handle switch input
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              checked={formField.value}
+                              onCheckedChange={formField.onChange}
+                            />
+                            <span>{formField.value ? 'Active' : 'Inactive'}</span>
+                          </div>
                         ) : (
                           <Input
                             type={field.type}

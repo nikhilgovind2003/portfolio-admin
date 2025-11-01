@@ -9,7 +9,7 @@ export const apiService = {
     return data;
   },
 
-  create: async (endpoint, data, isFormData = false) => {
+  create: async (endpoint:string, data:object, isFormData:boolean = false) => {
      const config = {
       headers: isFormData
         ? { "Content-Type": "multipart/form-data" }
@@ -20,12 +20,12 @@ export const apiService = {
     return res.data;
   },
 
-  update: async (model: string, id: string, payload: any) => {
+  update: async (model: string, id: string, payload: object) => {
     const { data } = await axios.put(`${API_BASE_URL}/${model}/${id}`, payload);
     return data;
   },
 
-  remove: async (model: string, id: string) => {
+  remove: async (model: string, id: number) => {
     const { data } = await axios.delete(`${API_BASE_URL}/${model}/${id}`);
     return data;
   },

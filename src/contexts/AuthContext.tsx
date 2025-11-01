@@ -7,6 +7,7 @@ interface User {
   email: string;
   name: string;
   role: string;
+  password?: string;
   avatar?: string;
 }
 
@@ -37,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Mock authentication - in production, this would call an API
       const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const user = users.find((u: any) => u.email === email && u.password === password);
+      const user = users.find((u: User) => u.email === email && u.password === password);
       
       if (!user) {
         throw new Error('Invalid email or password');
@@ -62,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const users = JSON.parse(localStorage.getItem('users') || '[]');
       
-      if (users.find((u: any) => u.email === email)) {
+      if (users.find((u: User) => u.email === email)) {
         throw new Error('Email already exists');
       }
 
