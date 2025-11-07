@@ -20,12 +20,13 @@ export const apiService = {
     return res.data;
   },
 
-  update: async (model: string, id: string, payload: object) => {
+  update: async (model: string, id: string|number, payload: object) => {
     const { data } = await axios.put(`${API_BASE_URL}/${model}/${id}`, payload);
     return data;
   },
 
   remove: async (model: string, id: number) => {
+    console.log("type => ",typeof id);
     const { data } = await axios.delete(`${API_BASE_URL}/${model}/${id}`);
     return data;
   },

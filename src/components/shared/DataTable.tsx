@@ -10,11 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Edit, Trash2 } from 'lucide-react';
 import { DeleteDialog } from './DeleteDialog';
 
-interface Column<T> {
+export type Column<T> = {
   header: string;
-  accessor: keyof T | ((row: T) => React.ReactNode);
+  accessor: keyof T | string;
   cell?: (value: any, row: T) => React.ReactNode;
-}
+};
 
 interface DataTableProps<T> {
   data: T[];
@@ -22,8 +22,7 @@ interface DataTableProps<T> {
   onEdit?: (row: T) => void;
   onDelete?: (row: T) => void;
 }
-
-export function DataTable<T extends { id: string }>({
+export function DataTable<T extends { id: string | number }>({
   data,
   columns,
   onEdit,
@@ -75,7 +74,7 @@ export function DataTable<T extends { id: string }>({
                     {onDelete && (
                       <DeleteDialog
                         id={Number(row.id)}
-                        apiPath="/skills"
+                        apiPath="skills"
                         onSuccess={() => onDelete(row)}
                       />
                     )}

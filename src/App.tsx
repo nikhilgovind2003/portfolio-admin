@@ -7,7 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import Index from "./pages/Index";
+// import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
@@ -30,11 +30,8 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <Routes>
-              {/* <Route path="/" element={<Index />} /> */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
               <Route
-                path="/dashboard"
+                path="/"
                 element={
                   <ProtectedRoute>
                     <DashboardLayout>
@@ -43,6 +40,18 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              {/* <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <DashboardOverview />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              /> */}
               <Route
                 path="/dashboard/users"
                 element={

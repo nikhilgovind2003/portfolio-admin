@@ -8,30 +8,18 @@ import { apiService } from "@/api/apiService";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { skillSchema, SkillFormData } from "@/schemas/skillSchema";
+import { Skill } from "@/lib/types";
+import { formFields } from "@/components/shared/formFields";
 
-type Skill = {
-  id: string;
-  skills: string;
-  name: string;
-  media_path?: string;
-  media_alt?: string;
-  status: boolean;
-  sort_order: number;
-};
 
-const formFields: FormFieldConfig[] = [
-  { name: "name", label: "Skill Name", type: "text", placeholder: "React" },
-  { name: "media_path", label: "Skill Image", type: "file", accept: "image/*" },
-  { name: "media_alt", label: "Alt Text", type: "text", placeholder: "Alt text" },
-  { name: "sort_order", label: "Sort Order", type: "number", placeholder: "0" },
-  { name: "status", label: "Status", type: "switch" },
-];
+
 
 const Skills = () => {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
 
+  console.log("edit skiils ", editingSkill)
   const form = useForm<SkillFormData>({
     resolver: zodResolver(skillSchema),
     defaultValues: {
@@ -39,7 +27,8 @@ const Skills = () => {
       media_path: "",
       media_alt: "",
       status: true,
-      sort_order: 0,
+      sort_order: 1,
+
     },
   });
 
@@ -67,23 +56,25 @@ const Skills = () => {
       formData.append("sort_order", data.sort_order.toString());
       formData.append("status", data.status ? "true" : "false");
 
-      if (data.media_path instanceof File) {
+      if (data?.media_path instanceof File) {
         formData.append("media_path", data.media_path);
       }
-
+ 
       if (editingSkill) {
-        // UPDATE
-        await apiService.update("skills", editingSkill.id, formData);
+        const updatedSkill = await apiService.update("skills", editingSkill.id, formData);
+        setSkills((prev) =>
+          prev.map((s) => (s.id === editingSkill.id ? updatedSkill : s))
+        );
         toast.success("Skill updated successfully!");
       } else {
-        // CREATE
-        await apiService.create("skills", formData, true);
+        const newSkill = await apiService.create("skills", formData, true);
+        setSkills((prev) => [...prev, newSkill]);
         toast.success("Skill added successfully!");
       }
 
-      await fetchSkills();
       setIsDialogOpen(false);
       resetForm();
+
     } catch (error) {
       console.error("Error saving skill:", error);
       toast.error("Failed to save skill. Please try again.");
@@ -107,27 +98,37 @@ const Skills = () => {
   // ✅ Delete
   const handleDelete = async (skill: Skill) => {
     try {
-      await apiService.remove("skills", skill.id);
-      toast.success("Skill deleted successfully");
-      fetchSkills();
+      const res = await apiService.remove("skills", skill.id);
+
+      if (res?.success !== false) {
+        toast.success("Skill deleted successfully");
+        setSkills((prev) => prev.filter((s) => s.id !== skill.id));
+      } else {
+        toast.error("Failed to delete skill from server");
+      }
     } catch {
-      toast.error("Failed to delete skill");
+      toast.error("Error deleting skill");
     }
   };
+
 
   // ✅ Reset form when dialog closes
   const resetForm = () => {
     form.reset({
-    name: "",
-    media_path: "",
-    media_alt: "",
-    status: true,
-    sort_order: 0,
-  });
-  setEditingSkill(null);
+      name: "",
+      media_path: "",
+      media_alt: "",
+      status: true,
+      sort_order: 0,
+    });
+    setEditingSkill(null);
   };
 
   const columns = [
+    {
+      header: "ID",
+      accessor: "id",
+    },
     {
       header: "Image",
       accessor: "media_path",
@@ -176,7 +177,7 @@ const Skills = () => {
         </Button>
       </div>
 
-      <DataTable data={skills} columns={columns} onEdit={handleEdit} onDelete={handleDelete} />
+      <DataTable<Skill> data={skills} columns={columns} onEdit={handleEdit} onDelete={handleDelete} />
 
       <FormDialog
         open={isDialogOpen}
