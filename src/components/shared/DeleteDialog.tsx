@@ -30,7 +30,7 @@ export function DeleteDialog({ id, apiPath, onSuccess }: DeleteDialogProps) {
       setLoading(true);
       await apiService.remove(apiPath, id);
       toast.success("Deleted successfully!");
-      onSuccess();
+      onSuccess(); // ✅ only updates UI state
       setOpen(false);
     } catch (error) {
       console.error(error);

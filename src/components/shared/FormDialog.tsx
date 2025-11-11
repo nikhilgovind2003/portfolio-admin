@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { UseFormReturn } from 'react-hook-form';
 import { Switch } from "@/components/ui/switch";
 
-export type FormFieldType = 'text' | 'email' | 'password' | 'textarea' | 'select' | 'number' | 'url' | 'file' | "switch";
+export type FormFieldType = 'text' | 'email' | 'password' | 'textarea' | 'select' | 'number' | 'url' | 'file' | "switch" | 'multiselect';
 
 export interface FormFieldConfig {
   name: string;
@@ -98,40 +98,64 @@ export const FormDialog = ({
                               </div>
                             )}
                           </>
-                        ) : field.type === 'textarea' ? (
-                          <Textarea
-                            placeholder={field.placeholder}
-                            rows={field.rows || 4}
-                            {...formField}
-                          />
-                        ) : field.type === 'select' && field.options ? (
-                          <Select onValueChange={formField.onChange} value={formField.value}>
-                            <SelectTrigger>
-                              <SelectValue placeholder={field.placeholder} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {field.options.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : field.type === 'switch' ? ( // ✅ handle switch input
-                          <div className="flex items-center space-x-2">
-                            <Switch
-                              checked={formField.value}
-                              onCheckedChange={formField.onChange}
-                            />
-                            <span>{formField.value ? 'Active' : 'Inactive'}</span>
-                          </div>
-                        ) : (
-                          <Input
-                            type={field.type}
-                            placeholder={field.placeholder}
-                            {...formField}
-                          />
-                        )}
+                        ) :
+                          field.type === 'multiselect' && field.options ? (
+                            <Select
+                              onValueChange={(value) => {
+                                const currentValues = formField.value || [];
+                                if (currentValues.includes(value)) {
+                                  formField.onChange(currentValues.filter((v: string) => v !== value));
+                                } else {
+                                  formField.onChange([...currentValues, value]);
+                                }
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder={field.placeholder} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {field.options.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {formField.value?.includes(option.value) ? "✅ " : ""}{option.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) :
+                            field.type === 'textarea' ? (
+                              <Textarea
+                                placeholder={field.placeholder}
+                                rows={field.rows || 4}
+                                {...formField}
+                              />
+                            ) : field.type === 'select' && field.options ? (
+                              <Select onValueChange={formField.onChange} value={formField.value}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder={field.placeholder} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {field.options.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                      {option.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : field.type === 'switch' ? ( // ✅ handle switch input
+                              <div className="flex items-center space-x-2">
+                                <Switch
+                                  checked={formField.value}
+                                  onCheckedChange={formField.onChange}
+                                />
+                                <span>{formField.value ? 'Active' : 'Inactive'}</span>
+                              </div>
+                            ) : (
+                              <Input
+                                type={field.type}
+                                placeholder={field.placeholder}
+                                {...formField}
+                              />
+                            )}
                       </FormControl>
                       <FormMessage />
                     </FormItem>
