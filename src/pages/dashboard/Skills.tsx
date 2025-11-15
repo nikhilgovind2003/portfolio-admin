@@ -110,7 +110,7 @@ const Skills = () => {
         value ? (
           <img
             src={`${MEDIA_URL}${value}`}
-            alt={row.skills}
+            alt={row.media_alt}
             className="w-12 h-12 rounded-md object-cover border"
           />
         ) : (

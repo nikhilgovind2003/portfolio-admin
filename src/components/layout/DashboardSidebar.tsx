@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 
 const menuItems = [
-  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'CMS Data', url: '/dashboard/cms', icon: FileText },
   { title: 'Profile', url: '/dashboard/profile', icon: UserCircle },
   { title: 'Projects', url: '/dashboard/projects', icon: FolderKanban },

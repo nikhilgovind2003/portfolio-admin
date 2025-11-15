@@ -18,3 +18,9 @@ export const projectField: FormFieldConfig[] = [
   { name: 'project_link', label: 'Project Link', type: 'url', placeholder: 'https://example.com' },
   { name: 'github_link', label: 'GitHub Link', type: 'url', placeholder: 'https://github.com/username/repo' },
 ];
+
+export const technologyField: FormFieldConfig[] = [
+  { name: 'name', label: 'Technology Name', type: 'text', placeholder: 'React' },
+  { name: "sort_order", label: "Sort Order", type: "number", placeholder: "0" },
+  { name: "status", label: "Status", type: "switch" },
+];

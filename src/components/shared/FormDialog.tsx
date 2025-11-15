@@ -99,29 +99,63 @@ export const FormDialog = ({
                             )}
                           </>
                         ) :
-                          field.type === 'multiselect' && field.options ? (
-                            <Select
-                              onValueChange={(value) => {
-                                const currentValues = formField.value || [];
-                                if (currentValues.includes(value)) {
-                                  formField.onChange(currentValues.filter((v: string) => v !== value));
-                                } else {
-                                  formField.onChange([...currentValues, value]);
-                                }
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder={field.placeholder} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {field.options.map((option) => (
-                                  <SelectItem key={option.value} value={option.value}>
-                                    {formField.value?.includes(option.value) ? "✅ " : ""}{option.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                          field.type === "multiselect" && field.options ? (
+                            <div className="space-y-2">
+
+                              {/* Dropdown */}
+                              <Select
+                                onValueChange={(value) => {
+                                  const current = formField.value || [];
+
+                                  const updated = current.includes(value)
+                                    ? current.filter((v: string) => v !== value)
+                                    : [...current, value];
+
+                                  formField.onChange(updated);
+                                }}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder={field.placeholder} />
+                                </SelectTrigger>
+
+                                <SelectContent>
+                                  {field.options.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                      {formField.value?.includes(option.value) ? "☑ " : "⬜ "}
+                                      {option.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+
+                              {/* Show selected chips */}
+                              <div className="flex flex-wrap gap-2">
+                                {formField.value?.map((v: string) => {
+                                  const opt = field.options!.find((o) => o.value === v);
+                                  return (
+                                    <div
+                                      key={v}
+                                      className="px-3 py-1 rounded-full bg-gray-100 border text-sm flex items-center gap-1"
+                                    >
+                                      {opt?.label}
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          formField.onChange(
+                                            formField.value.filter((x: string) => x !== v)
+                                          )
+                                        }
+                                        className="text-red-500 font-bold"
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
                           ) :
+
                             field.type === 'textarea' ? (
                               <Textarea
                                 placeholder={field.placeholder}

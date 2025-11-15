@@ -20,3 +20,11 @@ export type Project = {
   status: boolean;
   sort_order: number;
 };
+
+
+export type Technology = {
+  id: string;
+  name: string;
+  status: boolean;
+  sort_order: number;
+}
