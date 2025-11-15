@@ -15,6 +15,7 @@ const Technologies = () => {
   const [technologies, setTechnologies] = useState<Technology[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTech, setEditingTech] = useState<Technology | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<TechnologyFormData>({
     resolver: zodResolver(technologySchema),
@@ -27,12 +28,16 @@ const Technologies = () => {
 
   // ✅ Fetch all technologies
   const fetchTechnologies = useCallback(async () => {
+    setIsLoading(true);
     try {
       const data = await apiService.getAll("technology");
-      setTechnologies(data.data);
+      setTechnologies(data || []);
     } catch (err) {
       console.error(err);
       toast.error("Failed to load technologies");
+      setTechnologies([]);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -40,7 +45,6 @@ const Technologies = () => {
     fetchTechnologies();
   }, [fetchTechnologies]);
 
-  console.log(technologies)
   // ✅ Create or Update
   const handleSubmit = async (data: TechnologyFormData) => {
     try {
@@ -52,20 +56,35 @@ const Technologies = () => {
 
       if (editingTech) {
         const updated = await apiService.update("technology", editingTech.id, payload);
-        setTechnologies((prev) =>
-          prev.map((t) => (t?.id === editingTech?.id ? updated : t))
-        );
-
-        toast.success("Technology updated successfully!");
+        
+        // Ensure updated object has all required fields
+        if (updated && updated.id) {
+          setTechnologies((prev) =>
+            prev.map((t) => (t?.id === editingTech?.id ? updated : t))
+          );
+          toast.success("Technology updated successfully!");
+        } else {
+          // Fallback: refetch all data if response is incomplete
+          await fetchTechnologies();
+          toast.success("Technology updated successfully!");
+        }
       } else {
         const created = await apiService.create("technology", payload);
-        setTechnologies((prev) => [...prev, created]);
-
-        toast.success("Technology created successfully!");
+        
+        // Ensure created object has all required fields before adding to state
+        if (created && created.id) {
+          setTechnologies((prev) => [...prev, created]);
+          toast.success("Technology created successfully!");
+        } else {
+          // Fallback: refetch all data if response is incomplete
+          await fetchTechnologies();
+          toast.success("Technology created successfully!");
+        }
       }
 
       setIsDialogOpen(false);
       resetForm();
+      
     } catch (error) {
       console.error("Error saving technology:", error);
       toast.error("Failed to save technology");
@@ -76,9 +95,9 @@ const Technologies = () => {
   const handleEdit = (tech: Technology) => {
     setEditingTech(tech);
     form.reset({
-      name: tech.name,
-      sort_order: tech.sort_order,
-      status: tech.status,
+      name: tech.name || "",
+      sort_order: tech.sort_order || 1,
+      status: tech.status ?? true,
     });
     setIsDialogOpen(true);
   };
@@ -106,8 +125,16 @@ const Technologies = () => {
   };
 
   const columns = [
-    { header: "Name", accessor: "name" },
-    { header: "Sort Order", accessor: "sort_order" },
+    { 
+      header: "Name", 
+      accessor: "name",
+      cell: (value: string) => value || "N/A"
+    },
+    { 
+      header: "Sort Order", 
+      accessor: "sort_order",
+      cell: (value: number) => value ?? "N/A"
+    },
     {
       header: "Status",
       accessor: "status",
@@ -118,8 +145,17 @@ const Technologies = () => {
           <span className="text-gray-500">Inactive</span>
         ),
     },
-    { header: "Created At", accessor: "updatedAt", cell: (value) => new Date(value).toLocaleDateString("en-IN"), },
-
+    { 
+      header: "Created At", 
+      accessor: "updatedAt", 
+      cell: (value: string) => {
+        try {
+          return value ? new Date(value).toLocaleDateString("en-IN") : "N/A";
+        } catch {
+          return "Invalid Date";
+        }
+      }
+    },
   ];
 
   return (
@@ -145,8 +181,8 @@ const Technologies = () => {
         data={technologies}
         columns={columns}
         onEdit={handleEdit}
-        onDelete={handleDelete}
         apiPath="technology"
+        onDelete={handleDelete}
       />
 
       <FormDialog

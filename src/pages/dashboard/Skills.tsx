@@ -31,6 +31,7 @@ const Skills = () => {
   const fetchSkills = useCallback(async () => {
     try {
       const data = await apiService.getAll("skills");
+      console.log(data)
       setSkills(data);
     } catch {
       toast.error("Failed to load skills");

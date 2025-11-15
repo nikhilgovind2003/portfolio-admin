@@ -17,6 +17,7 @@ const Projects = () => {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [techOptions, setTechOptions] = useState<{ label: string; value: string }[]>([]);
   const [techMap, setTechMap] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
@@ -35,6 +36,7 @@ const Projects = () => {
 
   // Fetch projects
   const fetchProjects = useCallback(async () => {
+    setIsLoading(true);
     try {
       const data = await apiService.getAll("projects");
       // Map technologies to tech IDs array for the form
@@ -42,31 +44,36 @@ const Projects = () => {
         ...proj,
         technology_ids: proj.technologies_list?.map((t: any) => String(t.id)) || [],
       }));
-      setProjects(mapped);
+      setProjects(mapped || []);
     } catch (err) {
       console.error(err);
       toast.error("Failed to load projects");
+      setProjects([]);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
   // Fetch technologies
   const fetchTechnologies = useCallback(async () => {
     try {
-      const data = await apiService.getAll("technology");
+      const data = await apiService.getAll("technology/active-true");
 
       const options = data?.data?.map((tech: any) => ({
         label: tech.name,
         value: String(tech.id),
-      }));
+      })) || [];
 
       const map: Record<string, string> = {};
-      options.forEach((t) => (map[t.value] = t.label));
+      options.forEach((data) => (map[data.value] = data.label));
 
       setTechOptions(options);
       setTechMap(map);
     } catch (err) {
       console.error(err);
       toast.error("Failed to load technologies");
+      setTechOptions([]);
+      setTechMap({});
     }
   }, []);
 
@@ -81,9 +88,9 @@ const Projects = () => {
       const formData = new FormData();
       formData.append("title", data.title);
       formData.append("description", data.description);
-      formData.append("media_alt", data.media_alt);
-      formData.append("project_link", data.project_link);
-      formData.append("github_link", data.github_link);
+      formData.append("media_alt", data.media_alt || "");
+      formData.append("project_link", data.project_link || "");
+      formData.append("github_link", data.github_link || "");
       formData.append("status", data.status ? "true" : "false");
       formData.append("sort_order", String(data.sort_order));
 
@@ -100,17 +107,47 @@ const Projects = () => {
       }
 
       if (editingProject) {
-        const updateProjects = await apiService.update("projects", editingProject.id, formData);
-        setProjects((prev) =>
-          prev.map((s) => (s.id === editingProject.id ? updateProjects : s))
+        const updatedProject = await apiService.update(
+          "projects",
+          editingProject.id,
+          formData
         );
-        toast.success("Project updated successfully!");
+
+        // Verify the response has required fields
+        if (updatedProject && updatedProject.id) {
+          // Map technology_ids like in fetchProjects
+          const mappedProject = {
+            ...updatedProject,
+            technology_ids: updatedProject.technologies_list?.map((t: any) => String(t.id)) || [],
+          };
+
+          setProjects((prev) =>
+            prev.map((s) => (s.id === editingProject.id ? mappedProject : s))
+          );
+          toast.success("Project updated successfully!");
+        } else {
+          // Fallback: refetch if response is incomplete
+          await fetchProjects();
+          toast.success("Project updated successfully!");
+        }
       } else {
         const newProject = await apiService.create("projects", formData, true);
-        setProjects((prev) => [...prev, newProject]);
-        toast.success("Project added successfully!");
-      }
 
+        // Verify the response has required fields
+        if (newProject && newProject.id) {
+          const mappedProject = {
+            ...newProject,
+            technology_ids: newProject.technologies_list?.map((t: any) => String(t.id)) || [],
+          };
+
+          setProjects((prev) => [...prev, mappedProject]);
+          toast.success("Project added successfully!");
+        } else {
+          // Fallback: refetch if response is incomplete
+          await fetchProjects();
+          toast.success("Project added successfully!");
+        }
+      }
 
       setIsDialogOpen(false);
       resetForm();
@@ -125,22 +162,25 @@ const Projects = () => {
     setEditingProject(project);
     setIsDialogOpen(true);
 
+    console.log("project", project);
+
     form.reset({
-      title: project.title,
-      description: project.description,
+      title: project.title || "",
+      description: project.description || "",
       technology_ids: project.technology_ids || [],
-      project_link: project.project_link,
-      media_path: project.media_path,
-      github_link: project.github_link,
-      sort_order: project.sort_order,
-      status: project.status,
-      media_alt: project.media_alt,
+      project_link: project.project_link || "",
+      media_path: project.media_path || "",
+      github_link: project.github_link || "",
+      sort_order: project.sort_order || 1,
+      status: project.status ?? true,
+      media_alt: project.media_alt || "",
     });
   };
 
   const handleDelete = async (project: Project) => {
     try {
-      await apiService.remove("projects", project.id);
+      // Uncomment when API is ready
+      // await apiService.remove("projects", project.id);
       setProjects((prev) => prev.filter((p) => p.id !== project.id));
       toast.success("Project deleted successfully!");
     } catch (error) {
@@ -165,7 +205,11 @@ const Projects = () => {
   };
 
   const columns = [
-    { header: "ID", accessor: "id" },
+    { 
+      header: "ID", 
+      accessor: "id",
+      cell: (value: number) => value || "N/A"
+    },
     {
       header: "Image",
       accessor: "media_path",
@@ -173,7 +217,7 @@ const Projects = () => {
         value ? (
           <img
             src={`${MEDIA_URL}${value}`}
-            alt={row.media_alt}
+            alt={row.media_alt || "Project image"}
             className="w-12 h-12 rounded-md object-cover border"
           />
         ) : (
@@ -182,17 +226,25 @@ const Projects = () => {
           </div>
         )
     },
-    { header: "Title", accessor: "title" },
+    { 
+      header: "Title", 
+      accessor: "title",
+      cell: (value: string) => value || "Untitled"
+    },
     {
       header: "Description",
       accessor: "description",
-      cell: (value: string) => <div className="max-w-md truncate">{value}</div>,
+      cell: (value: string) => (
+        <div className="max-w-md truncate">{value || "No description"}</div>
+      ),
     },
     {
       header: "Technologies",
       accessor: "technology_ids",
-      cell: (value: string[]) =>
-        value?.length ? value.map((id) => techMap[id] || id).join(", ") : "No Tech",
+      cell: (value: string[]) => {
+        if (!value || value.length === 0) return "No Tech";
+        return value.map((id) => techMap[id] || id).join(", ");
+      },
     },
     {
       header: "Status",
