@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { DataTable } from '@/components/shared/DataTable';
 import { FormDialog, FormFieldConfig } from '@/components/shared/FormDialog';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { userSchema, UserFormData } from '@/schemas/userSchema';
+import { PaginationInfo } from '@/components/shared/Pagination'; // <-- add this import
+import { Input } from '@/components/ui/input'; // <-- for search bar
 
 interface User {
   id: string;
@@ -42,9 +44,25 @@ const formFields: FormFieldConfig[] = [
 ];
 
 const Users = () => {
+  // PAGINATION & SEARCH STATE
   const [users, setUsers] = useState<User[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10,
+    hasNextPage: false,
+    hasPrevPage: false,
+    nextPage: null,
+    prevPage: null,
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [displayedUsers, setDisplayedUsers] = useState<User[]>([]); // paginated users
 
   const form = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
@@ -55,6 +73,30 @@ const Users = () => {
       status: 'active',
     },
   });
+
+  // EFFECT: Update displayedUsers whenever users/pagination/search changes
+  useEffect(() => {
+    let filtered = users;
+    if (searchQuery) {
+      filtered = users.filter(u =>
+        u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        u.email.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    const start = (currentPage - 1) * limit;
+    const end = start + limit;
+    setDisplayedUsers(filtered.slice(start, end));
+    setPagination({
+      currentPage,
+      itemsPerPage: limit,
+      totalItems: filtered.length,
+      totalPages: Math.max(1, Math.ceil(filtered.length / limit)),
+      hasPrevPage: currentPage > 1,
+      hasNextPage: currentPage < Math.ceil(filtered.length / limit),
+      prevPage: currentPage > 1 ? currentPage - 1 : null,
+      nextPage: currentPage < Math.ceil(filtered.length / limit) ? currentPage + 1 : null,
+    });
+  }, [users, currentPage, limit, searchQuery]);
 
   const columns = [
     { header: 'Name', accessor: 'name' as keyof User },
@@ -116,6 +158,23 @@ const Users = () => {
     setEditingUser(null);
   };
 
+  // PAGE CHANGE HANDLER
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // LIMIT CHANGE HANDLER
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setCurrentPage(1); // Reset to first page when limit changes
+  };
+
+  // SEARCH HANDLER
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -129,11 +188,29 @@ const Users = () => {
         </Button>
       </div>
 
+      {/* SEARCH BAR */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search users..."
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
+
+      {/* PAGINATED DATA TABLE */}
       <DataTable
-        data={users}
+        data={displayedUsers}
         columns={columns}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        onLimitChange={handleLimitChange}
+        isLoading={false}
       />
 
       <FormDialog

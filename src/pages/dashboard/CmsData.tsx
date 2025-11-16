@@ -7,26 +7,9 @@ import { toast } from 'sonner';
 import { apiService, MEDIA_URL } from '@/api/apiService';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { cmsSchema, CmsFormData } from '@/schemas/cmsSchema';
+import { CmsFormData, cmsSchema } from '@/schemas/cmsSchema';
 import { Loader2 } from 'lucide-react';
 
-interface CmsData {
-  id?: number;
-  super_title: string;
-  title: string;
-  description: string;
-  btn_one_text: string;
-  btn_one_link: string;
-  btn_two_text: string;
-  btn_two_link: string;
-  media_path: string | File;
-  media_alt: string;
-  project_title: string;
-  skills_title: string;
-  about_title: string;
-  about_description: string;
-  contact_title: string;
-}
 
 const CmsData = () => {
   const [isExisting, setIsExisting] = useState(false);

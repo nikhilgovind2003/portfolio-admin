@@ -1,16 +1,25 @@
+
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-export const MEDIA_URL = import.meta.env.VITE_MEDIA_API_URL;  // or hardcoded?
+export const MEDIA_URL = import.meta.env.VITE_MEDIA_API_URL;
 
 export const apiService = {
-  getAll: async (model: string) => {
-    const { data } = await axios.get(`${API_BASE_URL}/${model}`);
+  getAll: async (model: string, params?: { page?: number; limit?: number; search?: string; status?: boolean }) => {
+    const queryParams = new URLSearchParams();
+    
+    if (params?.page) queryParams.append('page', String(params.page));
+    if (params?.limit) queryParams.append('limit', String(params.limit));
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.status !== undefined) queryParams.append('status', String(params.status));
+
+    const url = `${API_BASE_URL}/${model}${queryParams.toString() ? `?${queryParams}` : ''}`;
+    const { data } = await axios.get(url);
     return data;
   },
 
-  create: async (endpoint:string, data:object, isFormData:boolean = false) => {
-     const config = {
+  create: async (endpoint: string, data: object, isFormData: boolean = false) => {
+    const config = {
       headers: isFormData
         ? { "Content-Type": "multipart/form-data" }
         : { "Content-Type": "application/json" },
@@ -20,29 +29,27 @@ export const apiService = {
     return res.data;
   },
 
-  update: async (model: string, id: string|number, payload: object) => {
+  update: async (model: string, id: string | number, payload: object) => {
     const { data } = await axios.put(`${API_BASE_URL}/${model}/${id}`, payload);
     return data;
   },
 
   async remove(path: string, id: number) {
-  const response = await fetch(`${API_BASE_URL}/${path}/${id}`, {
-    method: "DELETE",
-  });
+    const response = await fetch(`${API_BASE_URL}/${path}/${id}`, {
+      method: "DELETE",
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || "Delete failed");
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Delete failed");
+    }
+
+    if (response.status === 204) return null;
+
+    try {
+      return await response.json();
+    } catch {
+      return null;
+    }
   }
-
-  // Handle 204 No Content safely
-  if (response.status === 204) return null;
-
-  try {
-    return await response.json();
-  } catch {
-    return null; // No JSON body
-  }
-}
-
 };

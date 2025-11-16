@@ -1,15 +1,18 @@
+
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { DataTable } from "@/components/shared/DataTable";
 import { FormDialog } from "@/components/shared/FormDialog";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { projectSchema, ProjectFormData } from "@/schemas/projectSchema";
-import { Project } from "@/lib/types";
+import { Project, Technology } from "@/lib/types";
 import { projectField } from "@/components/shared/formFields";
 import { apiService, MEDIA_URL } from "@/api/apiService";
+import { PaginationInfo } from "@/components/shared/Pagination";
+import { Input } from "@/components/ui/input";
 
 const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -18,6 +21,21 @@ const Projects = () => {
   const [techOptions, setTechOptions] = useState<{ label: string; value: string }[]>([]);
   const [techMap, setTechMap] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Pagination states
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10,
+    hasNextPage: false,
+    hasPrevPage: false,
+    nextPage: null,
+    prevPage: null,
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
@@ -34,17 +52,25 @@ const Projects = () => {
     },
   });
 
-  // Fetch projects
+  // Fetch projects with pagination
   const fetchProjects = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await apiService.getAll("projects");
-      // Map technologies to tech IDs array for the form
-      const mapped = data.map((proj: any) => ({
-        ...proj,
-        technology_ids: proj.technologies_list?.map((t: any) => String(t.id)) || [],
+      const response = await apiService.getAll("projects", {
+        page: currentPage,
+        limit: limit,
+        search: searchQuery,
+      });
+
+      
+      const mapped = response.data.map((project: Project) => ({
+        ...project,
+        technology_ids: projects.technologies_list?.map((tech: Technology) => String(tech.id)) || [],
       }));
+      
+      console.log("Fetched projects:", mapped);
       setProjects(mapped || []);
+      setPagination(response.pagination);
     } catch (err) {
       console.error(err);
       toast.error("Failed to load projects");
@@ -52,14 +78,14 @@ const Projects = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentPage, limit, searchQuery]);
 
   // Fetch technologies
   const fetchTechnologies = useCallback(async () => {
     try {
       const data = await apiService.getAll("technology/active-true");
 
-      const options = data?.data?.map((tech: any) => ({
+      const options = data?.data?.map((tech: Technology) => ({
         label: tech.name,
         value: String(tech.id),
       })) || [];
@@ -79,8 +105,28 @@ const Projects = () => {
 
   useEffect(() => {
     fetchProjects();
+  }, [fetchProjects]);
+
+  useEffect(() => {
     fetchTechnologies();
-  }, [fetchProjects, fetchTechnologies]);
+  }, [fetchTechnologies]);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // Handle limit change
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setCurrentPage(1); // Reset to first page when limit changes
+  };
+
+  // Handle search
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1); // Reset to first page when searching
+  };
 
   // Handle Submit
   const handleSubmit = async (data: ProjectFormData) => {
@@ -98,7 +144,6 @@ const Projects = () => {
         formData.append("media_path", data.media_path);
       }
 
-      // Multiple technologies
       if (data.technology_ids?.length) {
         formData.append(
           "technologies",
@@ -107,48 +152,15 @@ const Projects = () => {
       }
 
       if (editingProject) {
-        const updatedProject = await apiService.update(
-          "projects",
-          editingProject.id,
-          formData
-        );
-
-        // Verify the response has required fields
-        if (updatedProject && updatedProject.id) {
-          // Map technology_ids like in fetchProjects
-          const mappedProject = {
-            ...updatedProject,
-            technology_ids: updatedProject.technologies_list?.map((t: any) => String(t.id)) || [],
-          };
-
-          setProjects((prev) =>
-            prev.map((s) => (s.id === editingProject.id ? mappedProject : s))
-          );
-          toast.success("Project updated successfully!");
-        } else {
-          // Fallback: refetch if response is incomplete
-          await fetchProjects();
-          toast.success("Project updated successfully!");
-        }
+        await apiService.update("projects", editingProject.id, formData);
+        toast.success("Project updated successfully!");
       } else {
-        const newProject = await apiService.create("projects", formData, true);
-
-        // Verify the response has required fields
-        if (newProject && newProject.id) {
-          const mappedProject = {
-            ...newProject,
-            technology_ids: newProject.technologies_list?.map((t: any) => String(t.id)) || [],
-          };
-
-          setProjects((prev) => [...prev, mappedProject]);
-          toast.success("Project added successfully!");
-        } else {
-          // Fallback: refetch if response is incomplete
-          await fetchProjects();
-          toast.success("Project added successfully!");
-        }
+        await apiService.create("projects", formData, true);
+        toast.success("Project added successfully!");
       }
 
+      // Refetch to get updated paginated data
+      await fetchProjects();
       setIsDialogOpen(false);
       resetForm();
     } catch (error) {
@@ -161,8 +173,6 @@ const Projects = () => {
   const handleEdit = (project: Project) => {
     setEditingProject(project);
     setIsDialogOpen(true);
-
-    console.log("project", project);
 
     form.reset({
       title: project.title || "",
@@ -179,10 +189,11 @@ const Projects = () => {
 
   const handleDelete = async (project: Project) => {
     try {
-      // Uncomment when API is ready
-      // await apiService.remove("projects", project.id);
-      setProjects((prev) => prev.filter((p) => p.id !== project.id));
-      toast.success("Project deleted successfully!");
+      // await apiService.remove("projects", Number(project.id));
+      // toast.success("Project deleted successfully!");
+      
+      // Refetch to update pagination
+      await fetchProjects();
     } catch (error) {
       console.error(error);
       toast.error("Failed to delete project");
@@ -277,12 +288,29 @@ const Projects = () => {
         </Button>
       </div>
 
+      {/* Search Bar */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search projects..."
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
+
       <DataTable<Project>
         data={projects}
         columns={columns}
         onEdit={handleEdit}
         onDelete={handleDelete}
         apiPath="projects"
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        onLimitChange={handleLimitChange}
+        isLoading={isLoading}
       />
 
       <FormDialog

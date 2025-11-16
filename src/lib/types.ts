@@ -28,3 +28,5 @@ export type Technology = {
   status: boolean;
   sort_order: number;
 }
+
+

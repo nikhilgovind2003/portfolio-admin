@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { DataTable } from "@/components/shared/DataTable";
 import { FormDialog } from "@/components/shared/FormDialog";
 import { toast } from "sonner";
@@ -10,11 +10,28 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { skillSchema, SkillFormData } from "@/schemas/skillSchema";
 import { Skill } from "@/lib/types";
 import { skillsField } from "@/components/shared/formFields";
+import { PaginationInfo } from "@/components/shared/Pagination";
+import { Input } from "@/components/ui/input";
 
 const Skills = () => {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
+  // Pagination states
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10,
+    hasNextPage: false,
+    hasPrevPage: false,
+    nextPage: null,
+    prevPage: null,
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<SkillFormData>({
     resolver: zodResolver(skillSchema),
@@ -27,22 +44,48 @@ const Skills = () => {
     },
   });
 
-  // ✅ Fetch all skills
+  // Fetch skills with pagination
   const fetchSkills = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const data = await apiService.getAll("skills");
-      console.log(data)
-      setSkills(data);
-    } catch {
+      const response = await apiService.getAll("skills", {
+        page: currentPage,
+        limit: limit,
+        search: searchQuery,
+      });
+      setSkills(response.data || []);
+      setPagination(response.pagination);
+    } catch (err) {
+      console.error(err);
       toast.error("Failed to load skills");
+      setSkills([]);
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  }, [currentPage, limit, searchQuery]);
 
   useEffect(() => {
     fetchSkills();
   }, [fetchSkills]);
 
-  // ✅ Submit (create or update)
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // Handle limit change
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setCurrentPage(1); // Reset to first page when limit changes
+  };
+
+  // Handle search
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
+  // Submit (create or update)
   const handleSubmit = async (data: SkillFormData) => {
     try {
       const formData = new FormData();
@@ -53,17 +96,15 @@ const Skills = () => {
       if (data.media_path instanceof File) formData.append("media_path", data.media_path);
 
       if (editingSkill) {
-        const updatedSkill = await apiService.update("skills", editingSkill.id, formData);
-        setSkills((prev) =>
-          prev.map((s) => (s.id === editingSkill.id ? updatedSkill : s))
-        );
+        await apiService.update("skills", editingSkill.id, formData);
         toast.success("Skill updated successfully!");
       } else {
-        const newSkill = await apiService.create("skills", formData, true);
-        setSkills((prev) => [...prev, newSkill]);
+        await apiService.create("skills", formData, true);
         toast.success("Skill added successfully!");
       }
 
+      // Refetch to get updated paginated data
+      await fetchSkills();
       setIsDialogOpen(false);
       resetForm();
     } catch (error) {
@@ -72,7 +113,7 @@ const Skills = () => {
     }
   };
 
-  // ✅ Edit
+  // Edit
   const handleEdit = (skill: Skill) => {
     setEditingSkill(skill);
     setIsDialogOpen(true);
@@ -85,10 +126,17 @@ const Skills = () => {
     });
   };
 
-  // ✅ Delete (UI-only update, no second API call)
-  const handleDelete = (skill: Skill) => {
-    setSkills((prev) => prev.filter((s) => s.id !== skill.id));
-    toast.success("Skill deleted successfully!");
+  // Delete with backend API call and refetch
+  const handleDelete = async (skill: Skill) => {
+    try {
+      // await apiService.remove("skills", Number(skill.id));
+      // toast.success("Skill deleted successfully!");
+      // Refetch to update pagination
+      await fetchSkills();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete skill");
+    }
   };
 
   const resetForm = () => {
@@ -151,12 +199,29 @@ const Skills = () => {
         </Button>
       </div>
 
+      {/* Search bar like projects */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search skills..."
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
+
       <DataTable<Skill>
         data={skills}
         columns={columns}
         onEdit={handleEdit}
         apiPath="skills"
         onDelete={handleDelete}
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        onLimitChange={handleLimitChange}
+        isLoading={isLoading}
       />
 
       <FormDialog
