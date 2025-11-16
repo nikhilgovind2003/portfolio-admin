@@ -17,6 +17,8 @@ const Skills = () => {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
+
+
   // Pagination states
   const [pagination, setPagination] = useState<PaginationInfo>({
     currentPage: 1,
@@ -151,7 +153,10 @@ const Skills = () => {
   };
 
   const columns = [
-    { header: "ID", accessor: "id" },
+    {
+      header: "ID", accessor: "id", sortable: true, width: "60px",
+      cell: (_value: any, _row: any, index: number) => index + 1,
+    },
     {
       header: "Image",
       accessor: "media_path",
@@ -168,7 +173,7 @@ const Skills = () => {
           </div>
         ),
     },
-    { header: "Name", accessor: "skills" },
+    { header: "Name", accessor: "skills", sortable: true },
     { header: "Sort Order", accessor: "sort_order" },
     {
       header: "Status",
@@ -222,6 +227,8 @@ const Skills = () => {
         onPageChange={handlePageChange}
         onLimitChange={handleLimitChange}
         isLoading={isLoading}
+        enableSearch={false} // We handle search externally here
+        showBorders={true} // controls border visibility
       />
 
       <FormDialog

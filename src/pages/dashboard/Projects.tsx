@@ -21,7 +21,7 @@ const Projects = () => {
   const [techOptions, setTechOptions] = useState<{ label: string; value: string }[]>([]);
   const [techMap, setTechMap] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Pagination states
   const [pagination, setPagination] = useState<PaginationInfo>({
     currentPage: 1,
@@ -62,12 +62,12 @@ const Projects = () => {
         search: searchQuery,
       });
 
-      
+
       const mapped = response.data.map((project: Project) => ({
         ...project,
         technology_ids: projects.technologies_list?.map((tech: Technology) => String(tech.id)) || [],
       }));
-      
+
       console.log("Fetched projects:", mapped);
       setProjects(mapped || []);
       setPagination(response.pagination);
@@ -191,7 +191,7 @@ const Projects = () => {
     try {
       // await apiService.remove("projects", Number(project.id));
       // toast.success("Project deleted successfully!");
-      
+
       // Refetch to update pagination
       await fetchProjects();
     } catch (error) {
@@ -216,10 +216,12 @@ const Projects = () => {
   };
 
   const columns = [
-    { 
-      header: "ID", 
+    {
+      header: "ID",
       accessor: "id",
-      cell: (value: number) => value || "N/A"
+      cell: (_value: any, _row: any, index: number) => index + 1,
+      width: "60px",
+      sortable: true,
     },
     {
       header: "Image",
@@ -237,10 +239,11 @@ const Projects = () => {
           </div>
         )
     },
-    { 
-      header: "Title", 
+    {
+      header: "Title",
       accessor: "title",
-      cell: (value: string) => value || "Untitled"
+      cell: (value: string) => value || "Untitled",
+      sortable: true,
     },
     {
       header: "Description",
@@ -311,6 +314,8 @@ const Projects = () => {
         onPageChange={handlePageChange}
         onLimitChange={handleLimitChange}
         isLoading={isLoading}
+        enableSearch={false} // We handle search externally here
+        showBorders={true} // controls border visibilit
       />
 
       <FormDialog

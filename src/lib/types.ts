@@ -30,3 +30,9 @@ export type Technology = {
 }
 
 
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+}

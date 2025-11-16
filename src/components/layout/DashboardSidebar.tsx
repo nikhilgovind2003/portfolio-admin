@@ -23,11 +23,11 @@ import {
 const menuItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'CMS Data', url: '/dashboard/cms', icon: FileText },
-  { title: 'Profile', url: '/dashboard/profile', icon: UserCircle },
   { title: 'Projects', url: '/dashboard/projects', icon: FolderKanban },
   { title: 'Skills', url: '/dashboard/skills', icon: Lightbulb },
   { title: 'Technologies', url: '/dashboard/technologies', icon: Code },
   { title: 'Users', url: '/dashboard/users', icon: Users },
+  { title: 'Profile', url: '/dashboard/profile', icon: UserCircle },
 ];
 
 export const DashboardSidebar = () => {
@@ -43,7 +43,7 @@ export const DashboardSidebar = () => {
             Admin
           </h2>
           {isCollapsed && (
-            <span className="font-bold text-xl text-sidebar-primary">A</span>
+            <span className="font-bold text-xl text-sidebar-primary">N</span>
           )}
         </div>
         

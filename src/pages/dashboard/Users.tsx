@@ -1,54 +1,18 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Plus, Search } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Search } from 'lucide-react';
 import { DataTable } from '@/components/shared/DataTable';
-import { FormDialog, FormFieldConfig } from '@/components/shared/FormDialog';
-import { Badge } from '@/components/ui/badge';
+import { PaginationInfo } from '@/components/shared/Pagination';
+import { Input } from '@/components/ui/input';
+import { User } from '@/lib/types';
+import { apiService } from '@/api/apiService';
 import { toast } from 'sonner';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { userSchema, UserFormData } from '@/schemas/userSchema';
-import { PaginationInfo } from '@/components/shared/Pagination'; // <-- add this import
-import { Input } from '@/components/ui/input'; // <-- for search bar
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'moderator' | 'user';
-  status: 'active' | 'inactive';
-}
-
-const formFields: FormFieldConfig[] = [
-  { name: 'name', label: 'Name', type: 'text', placeholder: 'John Doe' },
-  { name: 'email', label: 'Email', type: 'email', placeholder: 'john@example.com' },
-  { 
-    name: 'role', 
-    label: 'Role', 
-    type: 'select',
-    options: [
-      { label: 'Admin', value: 'admin' },
-      { label: 'Moderator', value: 'moderator' },
-      { label: 'User', value: 'user' },
-    ]
-  },
-  { 
-    name: 'status', 
-    label: 'Status', 
-    type: 'select',
-    options: [
-      { label: 'Active', value: 'active' },
-      { label: 'Inactive', value: 'inactive' },
-    ]
-  },
-];
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 const Users = () => {
-  // PAGINATION & SEARCH STATE
   const [users, setUsers] = useState<User[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState<PaginationInfo>({
     currentPage: 1,
     totalPages: 1,
@@ -59,120 +23,83 @@ const Users = () => {
     nextPage: null,
     prevPage: null,
   });
+
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
-  const [displayedUsers, setDisplayedUsers] = useState<User[]>([]); // paginated users
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<string | null>(null);
 
-  const form = useForm<UserFormData>({
-    resolver: zodResolver(userSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      role: 'user',
-      status: 'active',
-    },
-  });
 
-  // EFFECT: Update displayedUsers whenever users/pagination/search changes
-  useEffect(() => {
-    let filtered = users;
-    if (searchQuery) {
-      filtered = users.filter(u =>
-        u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.email.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+  const fetchUsers = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await apiService.getAll("contact", {
+        page: currentPage,
+        limit,
+        search: searchQuery,
+      });
+      setUsers(response.data || []);
+      setPagination(response.pagination);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load users");
+      setUsers([]);
+    } finally {
+      setIsLoading(false);
     }
-    const start = (currentPage - 1) * limit;
-    const end = start + limit;
-    setDisplayedUsers(filtered.slice(start, end));
-    setPagination({
-      currentPage,
-      itemsPerPage: limit,
-      totalItems: filtered.length,
-      totalPages: Math.max(1, Math.ceil(filtered.length / limit)),
-      hasPrevPage: currentPage > 1,
-      hasNextPage: currentPage < Math.ceil(filtered.length / limit),
-      prevPage: currentPage > 1 ? currentPage - 1 : null,
-      nextPage: currentPage < Math.ceil(filtered.length / limit) ? currentPage + 1 : null,
-    });
-  }, [users, currentPage, limit, searchQuery]);
+  }, [currentPage, limit, searchQuery]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const columns = [
-    { header: 'Name', accessor: 'name' as keyof User },
-    { header: 'Email', accessor: 'email' as keyof User },
-    { 
-      header: 'Role', 
-      accessor: 'role' as keyof User,
-      cell: (value: string) => <Badge variant="outline">{value}</Badge>
+    {
+      header: 'ID', accessor: 'id',
+      cell: (_value: any, _row: any, index: number) => index + 1,
+      sortable: true, width: '60px',
     },
-    { 
-      header: 'Status', 
-      accessor: 'status' as keyof User,
+    { header: 'Name', accessor: 'name', sortable: true },
+    { header: 'Email', accessor: 'email', sortable: true },
+    {
+      header: 'Message', accessor: 'message',
       cell: (value: string) => (
-        <Badge variant={value === 'active' ? 'default' : 'secondary'}>
-          {value}
-        </Badge>
+        <button
+          className="text-left truncate max-w-[200px] text-blue-600 hover:underline"
+          style={{ cursor: value ? 'pointer' : 'default' }}
+          onClick={e => {
+            e.stopPropagation();
+            if (value) {
+              setSelectedMessage(value);
+              setModalOpen(true);
+            }
+          }}
+        >
+          {value?.length > 64 ? value.slice(0, 64) + '…' : value || "—"}
+        </button>
       )
+    },
+    {
+      header: 'Date', accessor: 'createdAt', sortable: true,
+      cell: (value: string) => {
+        try {
+          return value ? new Date(value).toLocaleDateString("en-IN") : "N/A";
+        } catch {
+          return "Invalid Date";
+        }
+      }
     },
   ];
 
-  const handleSubmit = (data: UserFormData) => {
-    const userData: User = {
-      id: editingUser?.id || crypto.randomUUID(),
-      name: data.name,
-      email: data.email,
-      role: data.role,
-      status: data.status,
-    };
-
-    if (editingUser) {
-      setUsers(users.map(u => u.id === editingUser.id ? userData : u));
-      toast.success('User updated successfully');
-    } else {
-      setUsers([...users, userData]);
-      toast.success('User created successfully');
-    }
-    setIsDialogOpen(false);
-    resetForm();
-  };
-
-  const handleEdit = (user: User) => {
-    setEditingUser(user);
-    form.reset(user);
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = (user: User) => {
-    setUsers(users.filter(u => u.id !== user.id));
-    toast.success('User deleted successfully');
-  };
-
-  const resetForm = () => {
-    form.reset({
-      name: '',
-      email: '',
-      role: 'user',
-      status: 'active',
-    });
-    setEditingUser(null);
-  };
-
-  // PAGE CHANGE HANDLER
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  // LIMIT CHANGE HANDLER
+  const handlePageChange = (page: number) => setCurrentPage(page);
   const handleLimitChange = (newLimit: number) => {
     setLimit(newLimit);
-    setCurrentPage(1); // Reset to first page when limit changes
+    setCurrentPage(1);
   };
-
-  // SEARCH HANDLER
   const handleSearch = (value: string) => {
     setSearchQuery(value);
-    setCurrentPage(1); // Reset to first page when searching
+    setCurrentPage(1);
   };
 
   return (
@@ -182,54 +109,47 @@ const Users = () => {
           <h1 className="text-3xl font-bold">Users</h1>
           <p className="text-muted-foreground">Manage registered users</p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add User
-        </Button>
       </div>
 
-      {/* SEARCH BAR */}
+      {/* External search bar for consistency, or you can enable DataTable's search */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search users..."
             value={searchQuery}
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={e => handleSearch(e.target.value)}
             className="pl-9"
           />
         </div>
       </div>
 
-      {/* PAGINATED DATA TABLE */}
       <DataTable
-        data={displayedUsers}
+        data={users}
         columns={columns}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
         pagination={pagination}
         onPageChange={handlePageChange}
         onLimitChange={handleLimitChange}
-        isLoading={false}
+        isLoading={isLoading}
+        enableSearch={false} // We handle search externally here
+        showBorders={true} // controls border visibility
       />
 
-      <FormDialog
-        open={isDialogOpen}
-        onOpenChange={(open) => {
-          setIsDialogOpen(open);
-          if (!open) resetForm();
-        }}
-        title={editingUser ? 'Edit User' : 'Add New User'}
-        description={editingUser ? 'Update user information' : 'Create a new user account'}
-        form={form}
-        onSubmit={handleSubmit}
-        onCancel={() => {
-          setIsDialogOpen(false);
-          resetForm();
-        }}
-        submitLabel={editingUser ? 'Update' : 'Create'}
-        fields={formFields}
-      />
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>User Message</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-x-auto whitespace-pre-line break-words py-4">
+            {selectedMessage}
+          </div>
+          <DialogFooter>
+            <Button variant="primary" className="mt-2" onClick={() => setModalOpen(false)} autoFocus>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

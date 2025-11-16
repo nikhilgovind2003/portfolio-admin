@@ -18,6 +18,7 @@ const Technologies = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTech, setEditingTech] = useState<Technology | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  // Border toggle state example (optional)
 
   // PAGINATION & SEARCH STATES
   const [pagination, setPagination] = useState<PaginationInfo>({
@@ -158,15 +159,22 @@ const Technologies = () => {
   };
 
   const columns = [
-    { 
-      header: "Name", 
-      accessor: "name",
-      cell: (value: string) => value || "N/A"
+    {
+      header: "ID",
+      accessor: "id",
+      cell: (_value: any, _row: any, index: number) => index + 1,
+      width: "60px",
     },
-    { 
-      header: "Sort Order", 
+    {
+      header: "Name",
+      accessor: "name",
+      cell: (value: string) => value || "N/A",
+    },
+    {
+      header: "Sort Order",
       accessor: "sort_order",
-      cell: (value: number) => value ?? "N/A"
+      cell: (value: number) => value ?? "N/A",
+      sortable: true,
     },
     {
       header: "Status",
@@ -178,9 +186,9 @@ const Technologies = () => {
           <span className="text-gray-500">Inactive</span>
         ),
     },
-    { 
-      header: "Created At", 
-      accessor: "updatedAt", 
+    {
+      header: "Created At",
+      accessor: "updatedAt",
       cell: (value: string) => {
         try {
           return value ? new Date(value).toLocaleDateString("en-IN") : "N/A";
@@ -208,7 +216,7 @@ const Technologies = () => {
           Add Technology
         </Button>
       </div>
-      
+
       {/* SEARCH BAR */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1 max-w-sm">
@@ -233,6 +241,10 @@ const Technologies = () => {
         onPageChange={handlePageChange}
         onLimitChange={handleLimitChange}
         isLoading={isLoading}
+        enableSearch={false} // We handle search externally here
+        showBorders={true} // controls border visibility
+
+
       />
 
       <FormDialog
