@@ -89,7 +89,6 @@ export const apiService = {
     };
 
     const response = await axios.post(`${API_BASE_URL}/auth/register`, payload, config);
-       console.log(response);
        if (response.status !== 201) {
          return {data:null, error: 'Registration failed'};
        }

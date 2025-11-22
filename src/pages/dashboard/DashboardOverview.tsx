@@ -17,7 +17,6 @@ const DashboardOverview = () => {
       return;
     }
 
-    console.log('data', data)
 
     setCounts({
       userCount: data.userCount,
@@ -33,7 +32,6 @@ const DashboardOverview = () => {
     fetchDashboardData();
   }, []);
   
-  console.log(counts)
 
     const stats = [
     {

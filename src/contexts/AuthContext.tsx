@@ -52,7 +52,6 @@ const login = async (email, password) => {
     navigate("/");
   } catch (err) {
     toast.error(err.response.data.message||"Login failed");
-    console.log(err.response.data.message)
     throw err;
   }
 };

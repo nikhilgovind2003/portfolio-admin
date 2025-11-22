@@ -68,7 +68,6 @@ const Projects = () => {
         technology_ids: projects.technologies_list?.map((tech: Technology) => String(tech.id)) || [],
       }));
 
-      console.log("Fetched projects:", mapped);
       setProjects(mapped || []);
       setPagination(response.pagination);
     } catch (err) {
