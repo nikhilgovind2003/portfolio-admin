@@ -1,29 +1,62 @@
 import { Users, FolderKanban, Lightbulb, Code } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { apiService } from '@/api/apiService';
+import { useEffect, useState } from 'react';
 
 const DashboardOverview = () => {
-  const stats = [
+
+
+  const [counts, setCounts] = useState({ userCount: 0, projectCount: 0, techCount: 0, skillCount: 0 });
+
+
+  const fetchDashboardData = async () => {
+    // Placeholder for future data fetching logiccons
+    const { data, error } = await apiService.getAll('dashboard');
+    if (error) {
+      console.error('Error fetching dashboard data:', error);
+      return;
+    }
+
+    console.log('data', data)
+
+    setCounts({
+      userCount: data.userCount,
+      projectCount: data.projectCount,
+      techCount: data.techCount,
+      skillCount: data.skillCount
+    });
+  }
+
+
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+  
+  console.log(counts)
+
+    const stats = [
     {
       title: 'Total Users',
-      value: '0',
+      value: counts.userCount.toString(),
       icon: Users,
       description: 'Registered users',
     },
     {
       title: 'Projects',
-      value: '0',
+      value: counts.projectCount.toString(),
       icon: FolderKanban,
       description: 'Active projects',
     },
     {
       title: 'Skills',
-      value: '0',
+      value: counts.skillCount.toString(),
       icon: Lightbulb,
       description: 'Skills tracked',
     },
     {
       title: 'Technologies',
-      value: '0',
+      value: counts.techCount.toString(),
       icon: Code,
       description: 'Tech stack items',
     },

@@ -1,3 +1,4 @@
+import { apiService } from '@/api/apiService';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -38,69 +39,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
-    try {
-      // Mock authentication - in production, this would call an API
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const user = users.find((u: User) => u.email === email && u.password === password);
-      
-      if (!user) {
-        throw new Error('Invalid email or password');
-      }
 
-      const { password: _, ...userWithoutPassword } = user;
-      const token = btoa(JSON.stringify({ email, timestamp: Date.now() }));
-      
-      localStorage.setItem('user', JSON.stringify(userWithoutPassword));
-      localStorage.setItem('token', token);
-      setUser(userWithoutPassword);
-      
-      toast.success('Login successful!');
-      navigate('/');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Login failed');
-      throw error;
-    }
-  };
+const login = async (email, password) => {
+  try {
+    const { data, error } = await apiService.login({ email, password });
+    if (error) throw new Error(error);
+    const { user, token } = data; // from backend
+    localStorage.setItem("user", JSON.stringify(user));
+    localStorage.setItem("token", token);
+    setUser(user);
+    toast.success("Login successful!");
+    navigate("/");
+  } catch (err) {
+    toast.error(err.response.data.message||"Login failed");
+    console.log(err.response.data.message)
+    throw err;
+  }
+};
 
-  const signup = async (email: string, password: string, name: string) => {
-    try {
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      
-      if (users.find((u: User) => u.email === email)) {
-        throw new Error('Email already exists');
-      }
 
-      const newUser = {
-        id: crypto.randomUUID(),
-        email,
-        password,
-        name,
-        role: 'admin',
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-      };
+const signup = async (email, password, name) => {
+  try {
+    const payload = { userName: name, email, password }; // match backend!
+    const { data, error } = await apiService.signUp(payload);
+    if (error) throw new Error(error);
 
-      users.push(newUser);
-      localStorage.setItem('users', JSON.stringify(users));
-
-      const { password: _, ...userWithoutPassword } = newUser;
-      const token = btoa(JSON.stringify({ email, timestamp: Date.now() }));
-      
-      localStorage.setItem('user', JSON.stringify(userWithoutPassword));
-      localStorage.setItem('token', token);
-      setUser(userWithoutPassword);
-      
-      toast.success('Account created successfully!');
-      navigate('/login');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Signup failed');
-      throw error;
-    }
-  };
+    const user = data.result; // backend returns { result: user }
+    localStorage.setItem("user", JSON.stringify(user));
+    setUser(user);
+    toast.success("Account created successfully!");
+    navigate("/login");
+  } catch (err) {
+    toast.error(err.message || "Signup failed");
+    throw err;
+  }
+};
 
   const logout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+
     setUser(null);
     toast.success('Logged out successfully');
     navigate('/login');
