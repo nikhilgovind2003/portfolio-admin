@@ -88,7 +88,7 @@ export const FormDialog = ({
                                       typeof formField.value === 'string'
                                         ? formField.value.startsWith('http')
                                           ? formField.value
-                                          : `http://localhost:4000${formField.value}`
+                                          : `https://portfolio-api-0cc6.onrender.com${formField.value}`
                                         : ''
                                     }
                                     alt="Preview"

@@ -102,7 +102,7 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-              <Route
+              {/* <Route
                 path="/dashboard/profile"
                 element={
                   <ProtectedRoute>
@@ -111,7 +111,7 @@ const App = () => (
                     </DashboardLayout>
                   </ProtectedRoute>
                 }
-              />
+              /> */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

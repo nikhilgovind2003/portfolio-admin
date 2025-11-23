@@ -27,7 +27,7 @@ const menuItems = [
   { title: 'Skills', url: '/dashboard/skills', icon: Lightbulb },
   { title: 'Technologies', url: '/dashboard/technologies', icon: Code },
   { title: 'Users', url: '/dashboard/users', icon: Users },
-  { title: 'Profile', url: '/dashboard/profile', icon: UserCircle },
+  // { title: 'Profile', url: '/dashboard/profile', icon: UserCircle },
 ];
 
 export const DashboardSidebar = () => {

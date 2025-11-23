@@ -36,3 +36,14 @@ export type User = {
   email: string;
   message: string;
 }
+
+export type CMS = {
+  project_title?: string;
+  skills_title?: string;
+  about_title?: string;
+  about_description?: string;
+  contact_title?: string;
+  // Add other fields as needed
+};
+
+

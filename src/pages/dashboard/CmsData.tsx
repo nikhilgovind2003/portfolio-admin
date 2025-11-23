@@ -115,7 +115,7 @@ const CmsData = () => {
           toast.success('CMS entry updated successfully');
         }
       } else {
-        const created = await apiService.create('cms', formData, true);
+        const created = await apiService.update('cms', 1, formData);
         
         if (created && (created.id || created.data?.id)) {
           const createdData = created.data || created;
