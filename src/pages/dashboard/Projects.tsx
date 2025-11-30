@@ -178,7 +178,7 @@ const Projects = () => {
       description: project.description || "",
       technology_ids: project.technology_ids || [],
       project_link: project.project_link || "",
-      media_path: project.media_path || "",
+      // media_path: project.media_path || "",
       github_link: project.github_link || "",
       sort_order: project.sort_order || 1,
       status: project.status ?? true,

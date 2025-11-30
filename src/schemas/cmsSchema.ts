@@ -25,9 +25,10 @@ export const cmsSchema = z.object({
     .min(1, 'Button text is required')
     .max(50, 'Button text must be less than 50 characters'),
   
-  btn_two_link: z.string()
-    .min(1, 'Button link is required')
-    .max(200, 'Link must be less than 200 characters'),
+  resume: z.union([
+    z.instanceof(File),
+    z.string()
+  ]).optional().or(z.literal('')),
   
   media_path: z.union([
     z.instanceof(File),

@@ -36,7 +36,7 @@ export const cmsDataField: FormFieldConfig[] = [
   { name: "btn_one_link", label: "Button One Link", type: "text", placeholder: "Button link URL" },
   
   { name: "btn_two_text", label: "Button Two Text", type: "text", placeholder: "Button text" },
-  { name: "btn_two_link", label: "Button Two Link", type: "text", placeholder: "Button link URL" },
+  { name: "resume", label: "Resume", type: "file", placeholder: "Upload resume" },
   
   { name: "media_path", label: "Media File / URL", type: "file", placeholder: "Upload media or provide URL" },
   { name: "media_alt", label: "Media Alt Text", type: "text", placeholder: "Alt text for media" },

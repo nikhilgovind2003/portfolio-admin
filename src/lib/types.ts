@@ -43,6 +43,15 @@ export type CMS = {
   about_title?: string;
   about_description?: string;
   contact_title?: string;
+  resume?: string;
+  media_path?: string;
+  media_alt?: string;
+  super_title?: string;
+  title?: string;
+  description?: string;
+  btn_one_text?: string;
+  btn_one_link?: string;
+  btn_two_text?: string;
   // Add other fields as needed
 };
 

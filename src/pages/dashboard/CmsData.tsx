@@ -1,77 +1,94 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
-import { apiService, MEDIA_URL } from '@/api/apiService';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { CmsFormData, cmsSchema } from '@/schemas/cmsSchema';
-import { Loader2 } from 'lucide-react';
+import { useEffect, useState, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { cmsSchema, CmsFormData } from "@/schemas/cmsSchema";
+import { apiService, MEDIA_URL } from "@/api/apiService";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { FileText } from "lucide-react";
 
+interface CmsData {
+  id: number;
+  super_title: string;
+  title: string;
+  description: string;
+  btn_one_text: string;
+  btn_one_link: string;
+  btn_two_text: string;
+  resume: string;
+  media_path: string;
+  media_alt: string;
+  project_title: string;
+  skills_title: string;
+  about_title: string;
+  about_description: string;
+  contact_title: string;
+}
 
 const CmsData = () => {
-  const [isExisting, setIsExisting] = useState(false);
-  const [cmsId, setCmsId] = useState<number | null>(null);
+  const [cmsData, setCmsData] = useState<CmsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentImage, setCurrentImage] = useState<string>("");
+  const [currentResume, setCurrentResume] = useState<string>("");
 
   const form = useForm<CmsFormData>({
     resolver: zodResolver(cmsSchema),
     defaultValues: {
-      super_title: '',
-      title: '',
-      description: '',
-      btn_one_text: '',
-      btn_one_link: '',
-      btn_two_text: '',
-      btn_two_link: '',
-      media_path: '',
-      media_alt: '',
-      project_title: '',
-      skills_title: '',
-      about_title: '',
-      about_description: '',
-      contact_title: '',
+      super_title: "",
+      title: "",
+      description: "",
+      btn_one_text: "",
+      btn_one_link: "",
+      btn_two_text: "",
+      resume: "",
+      media_path: "",
+      media_alt: "",
+      project_title: "",
+      skills_title: "",
+      about_title: "",
+      about_description: "",
+      contact_title: "",
     },
   });
 
+  // Fetch CMS data
   const fetchCmsData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await apiService.getAll('cms');
-      
-      // Handle both direct data and nested data structure
+      const response = await apiService.getAll("cms");
       const data = response?.data || response;
-      
+
       if (data && (data.id || data.length > 0)) {
-        const cmsData = Array.isArray(data) ? data[0] : data;
-        
+        const cms = Array.isArray(data) ? data[0] : data;
+
         form.reset({
-          super_title: cmsData.super_title || '',
-          title: cmsData.title || '',
-          description: cmsData.description || '',
-          btn_one_text: cmsData.btn_one_text || '',
-          btn_one_link: cmsData.btn_one_link || '',
-          btn_two_text: cmsData.btn_two_text || '',
-          btn_two_link: cmsData.btn_two_link || '',
-          media_path: cmsData.media_path || '',
-          media_alt: cmsData.media_alt || '',
-          project_title: cmsData.project_title || '',
-          skills_title: cmsData.skills_title || '',
-          about_title: cmsData.about_title || '',
-          about_description: cmsData.about_description || '',
-          contact_title: cmsData.contact_title || '',
+          super_title: cms.super_title || "",
+          title: cms.title || "",
+          description: cms.description || "",
+          btn_one_text: cms.btn_one_text || "",
+          btn_one_link: cms.btn_one_link || "",
+          btn_two_text: cms.btn_two_text || "",
+          resume: cms.resume || "",
+          media_path: cms.media_path || "",
+          media_alt: cms.media_alt || "",
+          project_title: cms.project_title || "",
+          skills_title: cms.skills_title || "",
+          about_title: cms.about_title || "",
+          about_description: cms.about_description || "",
+          contact_title: cms.contact_title || "",
         });
-        
-        setCmsId(cmsData.id);
-        setCurrentImage(cmsData.media_path || '');
-        setIsExisting(true);
+
+        setCmsData(cms);
+        setCurrentImage(cms.media_path || "");
+        setCurrentResume(cms.resume || "");
       }
     } catch (err) {
-      console.error('Error fetching CMS data:', err);
-      toast.error('Failed to fetch CMS data');
+      console.error("Error fetching CMS data:", err);
+      toast.error("Failed to load CMS data");
     } finally {
       setIsLoading(false);
     }
@@ -81,57 +98,46 @@ const CmsData = () => {
     fetchCmsData();
   }, [fetchCmsData]);
 
+  // Handle Submit
   const handleSubmit = async (data: CmsFormData) => {
     try {
       const formData = new FormData();
-      formData.append('super_title', data.super_title);
-      formData.append('title', data.title);
-      formData.append('description', data.description);
-      formData.append('btn_one_text', data.btn_one_text);
-      formData.append('btn_one_link', data.btn_one_link);
-      formData.append('btn_two_text', data.btn_two_text);
-      formData.append('btn_two_link', data.btn_two_link);
-      formData.append('media_alt', data.media_alt);
-      formData.append('project_title', data.project_title);
-      formData.append('skills_title', data.skills_title);
-      formData.append('about_title', data.about_title);
-      formData.append('about_description', data.about_description);
-      formData.append('contact_title', data.contact_title);
+      formData.append("super_title", data.super_title);
+      formData.append("title", data.title);
+      formData.append("description", data.description);
+      formData.append("btn_one_text", data.btn_one_text);
+      formData.append("btn_one_link", data.btn_one_link);
+      formData.append("btn_two_text", data.btn_two_text);
+      formData.append("media_alt", data.media_alt);
+      formData.append("project_title", data.project_title);
+      formData.append("skills_title", data.skills_title);
+      formData.append("about_title", data.about_title);
+      formData.append("about_description", data.about_description);
+      formData.append("contact_title", data.contact_title);
 
+      // Append image file if it's a File object
       if (data.media_path instanceof File) {
-        formData.append('media_path', data.media_path);
+        formData.append("media_path", data.media_path);
       }
 
-      if (isExisting && cmsId) {
-        const updated = await apiService.update('cms', cmsId, formData);
-        
-        if (updated && (updated.id || updated.data?.id)) {
-          const updatedData = updated.data || updated;
-          setCurrentImage(updatedData.media_path || '');
-          toast.success('CMS entry updated successfully');
-        } else {
-          // Fallback: refetch data
-          await fetchCmsData();
-          toast.success('CMS entry updated successfully');
-        }
-      } else {
-        const created = await apiService.update('cms', 1, formData);
-        
-        if (created && (created.id || created.data?.id)) {
-          const createdData = created.data || created;
-          setCmsId(createdData.id);
-          setCurrentImage(createdData.media_path || '');
-          setIsExisting(true);
-          toast.success('CMS entry created successfully');
-        } else {
-          // Fallback: refetch data
-          await fetchCmsData();
-          toast.success('CMS entry created successfully');
-        }
+      // Append resume file if it's a File object
+      if (data.resume instanceof File) {
+        formData.append("resume", data.resume);
       }
-    } catch (err) {
-      console.error('Error saving CMS data:', err);
-      toast.error('Failed to save CMS entry');
+
+      if (cmsData) {
+        await apiService.update("cms", cmsData.id, formData);
+        toast.success("CMS content updated successfully!");
+      } else {
+        await apiService.create("cms", formData, true);
+        toast.success("CMS content created successfully!");
+      }
+
+      // Refetch to get updated data
+      await fetchCmsData();
+    } catch (error) {
+      console.error("Error saving CMS data:", error);
+      toast.error("Failed to save CMS content");
     }
   };
 
@@ -148,7 +154,7 @@ const CmsData = () => {
       <div>
         <h1 className="text-3xl font-bold">CMS Data</h1>
         <p className="text-muted-foreground">
-          {isExisting ? 'Update your website content' : 'Create your website content'}
+          {cmsData ? "Update your website content" : "Create your website content"}
         </p>
       </div>
 
@@ -157,7 +163,9 @@ const CmsData = () => {
           {/* Hero Section */}
           <div className="border rounded-lg p-6 space-y-4">
             <h2 className="text-xl font-semibold">Hero Section</h2>
-            
+
+            <div className="grid grid-cols-2 gap-4">
+              
             <FormField
               control={form.control}
               name="super_title"
@@ -185,6 +193,7 @@ const CmsData = () => {
                 </FormItem>
               )}
             />
+            </div>
 
             <FormField
               control={form.control}
@@ -231,34 +240,67 @@ const CmsData = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
+            
+            <FormField
+              control={form.control}
+              name="btn_two_text"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Button 2 Text</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., Contact Me" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Resume Upload */}
+            <div className="space-y-2">
               <FormField
                 control={form.control}
-                name="btn_two_text"
-                render={({ field }) => (
+                name="resume"
+                render={({ field: { value, onChange, ...field } }) => (
                   <FormItem>
-                    <FormLabel>Button 2 Text</FormLabel>
+                    <FormLabel>Upload Resume</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Contact Me" {...field} />
+                      <Input
+                        type="file"
+                        accept="application/pdf,.doc,.docx"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) onChange(file);
+                        }}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="btn_two_link"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Button 2 Link</FormLabel>
-                    <FormControl>
-                      <Input placeholder="/contact" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {currentResume && (
+                <div className="mt-2 p-3 border rounded-lg bg-muted/50 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Current Resume</p>
+                      <a
+                        href={`${MEDIA_URL}${currentResume}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline"
+                      >
+                        View Resume
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
+
+            </div>
+            <div className="grid grid-cols-2 gap-4">
 
             {/* Image Upload */}
             <div className="space-y-2">
@@ -283,7 +325,7 @@ const CmsData = () => {
                   </FormItem>
                 )}
               />
-              
+
               {currentImage && (
                 <div className="mt-2">
                   <img
@@ -307,12 +349,15 @@ const CmsData = () => {
                   <FormMessage />
                 </FormItem>
               )}
-            />
+              />
+            </div>
+              
           </div>
 
           {/* Section Titles */}
           <div className="border rounded-lg p-6 space-y-4">
             <h2 className="text-xl font-semibold">Section Titles</h2>
+            <div className="grid grid-cols-2 gap-4">
 
             <FormField
               control={form.control}
@@ -370,6 +415,7 @@ const CmsData = () => {
               )}
             />
           </div>
+          </div>
 
           {/* About Section */}
           <div className="border rounded-lg p-6 space-y-4">
@@ -397,7 +443,7 @@ const CmsData = () => {
                 Saving...
               </>
             ) : (
-              isExisting ? 'Update CMS Content' : 'Create CMS Content'
+              cmsData ? "Update CMS Content" : "Create CMS Content"
             )}
           </Button>
         </form>
