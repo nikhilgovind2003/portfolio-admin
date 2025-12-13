@@ -7,17 +7,18 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { lazy, Suspense } from "react";
 // import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import DashboardOverview from "./pages/dashboard/DashboardOverview";
-import Users from "./pages/dashboard/Users";
-import CmsData from "./pages/dashboard/CmsData";
-import Projects from "./pages/dashboard/Projects";
-import Skills from "./pages/dashboard/Skills";
-import Technologies from "./pages/dashboard/Technologies";
-import Profile from "./pages/dashboard/Profile";
-import NotFound from "./pages/NotFound";
+
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const DashboardOverview = lazy(() => import("./pages/dashboard/DashboardOverview"));
+const Users = lazy(() => import("./pages/dashboard/Users"));
+const Projects = lazy(() => import("./pages/dashboard/Projects"));
+const CmsData = lazy(() => import("./pages/dashboard/CmsData"));
+const Skills = lazy(() => import("./pages/dashboard/Skills"));
+const Technologies = lazy(() => import("./pages/dashboard/Technologies"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
@@ -29,20 +30,21 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <DashboardOverview />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              {/* <Route
+            <Suspense fallback={<div>Loading... </div>}>
+              <Routes>
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <DashboardOverview />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                {/* <Route
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
@@ -52,57 +54,57 @@ const App = () => (
                   </ProtectedRoute>
                 }
               /> */}
-              <Route
-                path="/dashboard/users"
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <Users />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/cms"
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <CmsData />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/projects"
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <Projects />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/skills"
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <Skills />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/technologies"
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <Technologies />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                }
-              />
-              {/* <Route
+                <Route
+                  path="/dashboard/users"
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <Users />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/cms"
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <CmsData />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/projects"
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <Projects />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/skills"
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <Skills />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/technologies"
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <Technologies />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                {/* <Route
                 path="/dashboard/profile"
                 element={
                   <ProtectedRoute>
@@ -112,8 +114,9 @@ const App = () => (
                   </ProtectedRoute>
                 }
               /> */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
