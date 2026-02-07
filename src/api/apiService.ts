@@ -2,7 +2,7 @@ import axios from "axios";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "https://portfolio-api-0cc6.onrender.com/api";
-export const MEDIA_URL = import.meta.env.VITE_MEDIA_API_URL;
+export const MEDIA_URL = `${import.meta.env.VITE_MEDIA_API_URL}`;
 
 export const apiService = {
   getAll: async (

@@ -6,7 +6,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { cmsSchema, CmsFormData } from "@/schemas/cmsSchema";
 import { apiService, MEDIA_URL } from "@/api/apiService";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FileText } from "lucide-react";
@@ -35,6 +42,7 @@ const CmsData = () => {
   const [currentImage, setCurrentImage] = useState<string>("");
   const [currentResume, setCurrentResume] = useState<string>("");
 
+
   const form = useForm<CmsFormData>({
     resolver: zodResolver(cmsSchema),
     defaultValues: {
@@ -62,29 +70,13 @@ const CmsData = () => {
       const response = await apiService.getAll("cms");
       const data = response?.data || response;
 
+      console.log(data)
       if (data && (data.id || data.length > 0)) {
         const cms = Array.isArray(data) ? data[0] : data;
 
-        form.reset({
-          super_title: cms.super_title || "",
-          title: cms.title || "",
-          description: cms.description || "",
-          btn_one_text: cms.btn_one_text || "",
-          btn_one_link: cms.btn_one_link || "",
-          btn_two_text: cms.btn_two_text || "",
-          resume: cms.resume || "",
-          media_path: cms.media_path || "",
-          media_alt: cms.media_alt || "",
-          project_title: cms.project_title || "",
-          skills_title: cms.skills_title || "",
-          about_title: cms.about_title || "",
-          about_description: cms.about_description || "",
-          contact_title: cms.contact_title || "",
-        });
-
         setCmsData(cms);
-        setCurrentImage(cms.media_path || "");
-        setCurrentResume(cms.resume || "");
+        setCurrentImage(cms?.media_path);
+        setCurrentResume(cms?.resume);
       }
     } catch (err) {
       console.error("Error fetching CMS data:", err);
@@ -94,11 +86,8 @@ const CmsData = () => {
     }
   }, [form]);
 
-  useEffect(() => {
-    fetchCmsData();
-  }, [fetchCmsData]);
 
-  // Handle Submit
+    // Handle Submit
   const handleSubmit = async (data: CmsFormData) => {
     try {
       const formData = new FormData();
@@ -140,6 +129,33 @@ const CmsData = () => {
       toast.error("Failed to save CMS content");
     }
   };
+  // useeffects
+  useEffect(() => {
+    fetchCmsData();
+  }, [fetchCmsData]);
+
+  useEffect(() => {
+    if (cmsData) {
+      form.reset({
+        super_title: cmsData?.super_title || "",
+        title: cmsData?.title || "",
+        description: cmsData?.description || "",
+        btn_one_text: cmsData?.btn_one_text || "",
+        btn_one_link: cmsData?.btn_one_link || "",
+        btn_two_text: cmsData?.btn_two_text || "",
+        resume: undefined,
+        media_path: undefined,
+        media_alt: cmsData?.media_alt || "",
+        project_title: cmsData?.project_title || "",
+        skills_title: cmsData?.skills_title || "",
+        about_title: cmsData?.about_title || "",
+        about_description: cmsData?.about_description || "",
+        contact_title: cmsData?.contact_title || "",
+      });
+    }
+  }, [cmsData, form]);
+
+
 
   if (isLoading) {
     return (
@@ -154,7 +170,9 @@ const CmsData = () => {
       <div>
         <h1 className="text-3xl font-bold">CMS Data</h1>
         <p className="text-muted-foreground">
-          {cmsData ? "Update your website content" : "Create your website content"}
+          {cmsData
+            ? "Update your website content"
+            : "Create your website content"}
         </p>
       </div>
 
@@ -165,34 +183,33 @@ const CmsData = () => {
             <h2 className="text-xl font-semibold">Hero Section</h2>
 
             <div className="grid grid-cols-2 gap-4">
-              
-            <FormField
-              control={form.control}
-              name="super_title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Super Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Welcome" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="super_title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Super Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Welcome" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Main Title *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Your main headline" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Main Title *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Your main headline" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <FormField
@@ -202,7 +219,11 @@ const CmsData = () => {
                 <FormItem>
                   <FormLabel>Description *</FormLabel>
                   <FormControl>
-                    <Textarea rows={4} placeholder="Your introduction" {...field} />
+                    <Textarea
+                      rows={4}
+                      placeholder="Your introduction"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -240,84 +261,109 @@ const CmsData = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-            
-            <FormField
-              control={form.control}
-              name="btn_two_text"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Button 2 Text</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Contact Me" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Resume Upload */}
-            <div className="space-y-2">
               <FormField
                 control={form.control}
-                name="resume"
-                render={({ field: { value, onChange, ...field } }) => (
+                name="btn_two_text"
+                render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Upload Resume</FormLabel>
+                    <FormLabel>Button 2 Text</FormLabel>
                     <FormControl>
-                      <Input
-                        type="file"
-                        accept="application/pdf,.doc,.docx"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) onChange(file);
-                        }}
-                        {...field}
-                      />
+                      <Input placeholder="e.g., Contact Me" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {currentResume && (
-                <div className="mt-2 p-3 border rounded-lg bg-muted/50 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="text-sm font-medium">Current Resume</p>
-                      <a
-                        href={`${MEDIA_URL}${currentResume}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline"
-                      >
-                        View Resume
-                      </a>
+              {/* Resume Upload */}
+              <div className="space-y-2">
+                <FormField
+                  control={form.control}
+                  name="resume"
+                  render={({ field: { value, onChange, ...field } }) => (
+                    <FormItem>
+                      <FormLabel>Upload Resume</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="file"
+                          accept="application/pdf,.doc,.docx"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) onChange(file);
+                          }}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {currentResume && (
+                  <div className="mt-2 p-3 border rounded-lg bg-muted/50 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="text-sm font-medium">Current Resume</p>
+                        <a
+                          href={`${MEDIA_URL}${currentResume}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline"
+                        >
+                          View Resume
+                        </a>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
+              {/* Image Upload */}
+              <div className="space-y-2">
+                <FormField
+                  control={form.control}
+                  name="media_path"
+                  render={({ field: { value, onChange, ...field } }) => (
+                    <FormItem>
+                      <FormLabel>Hero Image</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) onChange(file);
+                          }}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            {/* Image Upload */}
-            <div className="space-y-2">
+                {currentImage && (
+                  <div className="mt-2">
+                    <img
+                      src={`${MEDIA_URL}${currentImage}`}
+                      alt="Current hero image"
+                      className="w-full max-w-md h-48 object-cover rounded-lg border"
+                    />
+                  </div>
+                )}
+              </div>
+
               <FormField
                 control={form.control}
-                name="media_path"
-                render={({ field: { value, onChange, ...field } }) => (
+                name="media_alt"
+                render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Hero Image</FormLabel>
+                    <FormLabel>Image Alt Text</FormLabel>
                     <FormControl>
                       <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) onChange(file);
-                        }}
+                        placeholder="Describe the image for accessibility"
                         {...field}
                       />
                     </FormControl>
@@ -325,96 +371,72 @@ const CmsData = () => {
                   </FormItem>
                 )}
               />
-
-              {currentImage && (
-                <div className="mt-2">
-                  <img
-                    src={`${MEDIA_URL}${currentImage}`}
-                    alt="Current hero image"
-                    className="w-full max-w-md h-48 object-cover rounded-lg border"
-                  />
-                </div>
-              )}
             </div>
-
-            <FormField
-              control={form.control}
-              name="media_alt"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Image Alt Text</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Describe the image for accessibility" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-              />
-            </div>
-              
           </div>
 
           {/* Section Titles */}
           <div className="border rounded-lg p-6 space-y-4">
             <h2 className="text-xl font-semibold">Section Titles</h2>
             <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="project_title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Projects Section Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Featured Projects" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="project_title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Projects Section Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Featured Projects" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="skills_title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Skills Section Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Technical Skills" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="skills_title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Skills Section Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Technical Skills" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="about_title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>About Section Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., About Me" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="about_title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>About Section Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., About Me" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="contact_title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contact Section Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Let's Build Something Amazing" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+              <FormField
+                control={form.control}
+                name="contact_title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contact Section Title</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., Let's Build Something Amazing"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
 
           {/* About Section */}
@@ -428,7 +450,11 @@ const CmsData = () => {
                 <FormItem>
                   <FormLabel>About Description</FormLabel>
                   <FormControl>
-                    <Textarea rows={4} placeholder="Tell visitors about yourself" {...field} />
+                    <Textarea
+                      rows={4}
+                      placeholder="Tell visitors about yourself"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -436,14 +462,20 @@ const CmsData = () => {
             />
           </div>
 
-          <Button type="submit" disabled={form.formState.isSubmitting} size="lg">
+          <Button
+            type="submit"
+            disabled={form.formState.isSubmitting}
+            size="lg"
+          >
             {form.formState.isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Saving...
               </>
+            ) : cmsData ? (
+              "Update CMS Content"
             ) : (
-              cmsData ? "Update CMS Content" : "Create CMS Content"
+              "Create CMS Content"
             )}
           </Button>
         </form>

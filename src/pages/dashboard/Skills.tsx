@@ -18,7 +18,6 @@ const Skills = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
 
-
   // Pagination states
   const [pagination, setPagination] = useState<PaginationInfo>({
     currentPage: 1,
@@ -95,7 +94,8 @@ const Skills = () => {
       formData.append("media_alt", data.media_alt);
       formData.append("sort_order", data.sort_order.toString());
       formData.append("status", data.status ? "true" : "false");
-      if (data.media_path instanceof File) formData.append("media_path", data.media_path);
+      if (data.media_path instanceof File)
+        formData.append("media_path", data.media_path);
 
       if (editingSkill) {
         await apiService.update("skills", editingSkill.id, formData);
@@ -154,14 +154,20 @@ const Skills = () => {
 
   const columns = [
     {
-      header: "ID", accessor: "id", sortable: true, width: "60px",
+      header: "ID",
+      accessor: "id",
+      sortable: true,
+      width: "60px",
       cell: (_value: any, _row: any, index: number) => index + 1,
     },
     {
       header: "Image",
       accessor: "media_path",
-      cell: (value: string, row: Skill) =>
-        value ? (
+      cell: (value: string, row: Skill) => {
+
+        console.log(`${MEDIA_URL}${value}`)
+
+        return value ? (
           <img
             src={`${MEDIA_URL}${value}`}
             alt={row.media_alt}
@@ -171,7 +177,8 @@ const Skills = () => {
           <div className="w-12 h-12 bg-gray-100 flex items-center justify-center text-xs text-gray-400 border">
             No Image
           </div>
-        ),
+        );
+      },
     },
     { header: "Name", accessor: "skills", sortable: true },
     { header: "Sort Order", accessor: "sort_order" },

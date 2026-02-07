@@ -82,7 +82,7 @@ export function Pagination({ pagination, onPageChange, onLimitChange }: Paginati
           value={String(itemsPerPage)}
           onValueChange={(value) => onLimitChange(Number(value))}
         >
-          <SelectTrigger className="w-[70px]">
+          <SelectTrigger className="">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -108,7 +108,7 @@ export function Pagination({ pagination, onPageChange, onLimitChange }: Paginati
           size="icon"
           onClick={() => onPageChange(1)}
           disabled={!hasPrevPage}
-          className="h-8 w-8"
+          className=""
         >
           <ChevronsLeft className="h-4 w-4" />
         </Button>
@@ -133,7 +133,7 @@ export function Pagination({ pagination, onPageChange, onLimitChange }: Paginati
               size="icon"
               onClick={() => typeof page === "number" && onPageChange(page)}
               disabled={page === "..."}
-              className="h-8 w-8"
+              className="px-[30px]"
             >
               {page}
             </Button>
