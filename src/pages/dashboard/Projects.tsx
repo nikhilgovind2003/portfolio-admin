@@ -65,7 +65,7 @@ const Projects = () => {
 
       const mapped = response.data.map((project: Project) => ({
         ...project,
-        technology_ids: projects.technologies_list?.map((tech: Technology) => String(tech.id)) || [],
+        technology_ids: project.technologies_list?.map((tech: Technology) => String(tech._id || tech.id)) || [],
       }));
 
       setProjects(mapped || []);
@@ -86,7 +86,7 @@ const Projects = () => {
 
       const options = data?.data?.map((tech: Technology) => ({
         label: tech.name,
-        value: String(tech.id),
+        value: String(tech._id || tech.id),
       })) || [];
 
       const map: Record<string, string> = {};
@@ -146,12 +146,12 @@ const Projects = () => {
       if (data.technology_ids?.length) {
         formData.append(
           "technologies",
-          JSON.stringify(data.technology_ids.map(Number))
+          JSON.stringify(data.technology_ids)
         );
       }
 
       if (editingProject) {
-        await apiService.update("projects", editingProject.id, formData);
+        await apiService.update("projects", editingProject._id || editingProject.id!, formData);
         toast.success("Project updated successfully!");
       } else {
         await apiService.create("projects", formData, true);
@@ -228,7 +228,7 @@ const Projects = () => {
       cell: (value: string, row: Project) =>
         value ? (
           <img
-            src={`${MEDIA_URL}${value}`}
+            src={value}
             alt={row.media_alt || "Project image"}
             className="w-12 h-12 rounded-md object-cover border"
           />

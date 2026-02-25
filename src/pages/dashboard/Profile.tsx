@@ -10,30 +10,59 @@ import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useEffect } from 'react';
+import { apiService } from '@/api/apiService';
 
 const profileSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters').max(100),
+  userName: z.string().min(2, 'Username must be at least 2 characters').max(100),
   email: z.string().email('Invalid email address').max(255),
   bio: z.string().max(500, 'Bio must be less than 500 characters').optional(),
   avatar: z.string().url('Must be a valid URL').optional().or(z.literal('')),
 });
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: user?.name || '',
+      userName: user?.userName || '',
       email: user?.email || '',
-      bio: '',
+      bio: user?.bio || '',
       avatar: user?.avatar || '',
     },
   });
 
-  const handleSubmit = (data: z.infer<typeof profileSchema>) => {
-    // Update user profile
-    toast.success('Profile updated successfully');
+  // Keep form in sync with user data (e.g. after refresh/initial load)
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        userName: user.userName || '',
+        email: user.email || '',
+        bio: user.bio || '',
+        avatar: user.avatar || '',
+      });
+    }
+  }, [user, form]);
+
+  const handleSubmit = async (data: z.infer<typeof profileSchema>) => {
+    try {
+      if (!user?._id) { // Use _id if id is not present
+        toast.error("User ID not found");
+        return;
+      }
+
+      // Backend expects userName, email, bio, avatar
+      const response = await apiService.update("auth/profile", user._id, data);
+      
+      // Update global state
+      updateUser(response);
+      
+      toast.success('Profile updated successfully');
+    } catch (err: any) {
+      console.error("Error updating profile:", err);
+      toast.error(err.response?.data?.message || 'Failed to update profile');
+    }
   };
 
   return (
@@ -53,9 +82,9 @@ const Profile = () => {
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
               <div className="flex items-center gap-6">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={form.watch('avatar')} alt={form.watch('name')} />
+                  <AvatarImage src={form.watch('avatar')} alt={form.watch('userName')} />
                   <AvatarFallback className="text-2xl">
-                    {form.watch('name')?.charAt(0).toUpperCase()}
+                    {form.watch('userName')?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <FormField
@@ -75,10 +104,10 @@ const Profile = () => {
 
               <FormField
                 control={form.control}
-                name="name"
+                name="userName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel>User Name</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>

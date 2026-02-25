@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { apiService } from "@/api/apiService";
 
 interface DeleteDialogProps {
-  id: number;
+  id: string | number;
   apiPath: string;
   onSuccess: () => void;
 }

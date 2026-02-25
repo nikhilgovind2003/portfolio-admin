@@ -95,10 +95,12 @@ const Technologies = () => {
       };
 
       if (editingTech) {
-        const updated = await apiService.update("technology", editingTech.id, payload);
-        if (updated && updated.id) {
+        const updated = await apiService.update("technology", editingTech._id || editingTech.id!, payload);
+        const updatedData = updated?.data || updated;
+
+        if (updatedData && (updatedData.id || updatedData._id)) {
           setTechnologies((prev) =>
-            prev.map((t) => (t?.id === editingTech?.id ? updated : t))
+            prev.map((t) => (t?._id === editingTech?._id || t?.id === editingTech?.id ? updatedData : t))
           );
           toast.success("Technology updated successfully!");
         } else {
@@ -107,8 +109,10 @@ const Technologies = () => {
         }
       } else {
         const created = await apiService.create("technology", payload);
-        if (created && created.id) {
-          setTechnologies((prev) => [...prev, created]);
+        const createdData = created?.data || created;
+
+        if (createdData && (createdData.id || createdData._id)) {
+          setTechnologies((prev) => [...prev, createdData]);
           toast.success("Technology created successfully!");
         } else {
           await fetchTechnologies();

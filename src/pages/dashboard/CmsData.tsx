@@ -19,7 +19,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { FileText } from "lucide-react";
 
 interface CmsData {
-  id: number;
+  id?: number;
+  _id?: string;
   super_title: string;
   title: string;
   description: string;
@@ -34,6 +35,7 @@ interface CmsData {
   about_title: string;
   about_description: string;
   contact_title: string;
+  experience_title: string;
 }
 
 const CmsData = () => {
@@ -60,6 +62,7 @@ const CmsData = () => {
       about_title: "",
       about_description: "",
       contact_title: "",
+      experience_title: "",
     },
   });
 
@@ -71,7 +74,7 @@ const CmsData = () => {
       const data = response?.data || response;
 
       console.log(data)
-      if (data && (data.id || data.length > 0)) {
+      if (data && (data.id || data._id || (Array.isArray(data) && data.length > 0))) {
         const cms = Array.isArray(data) ? data[0] : data;
 
         setCmsData(cms);
@@ -87,7 +90,7 @@ const CmsData = () => {
   }, [form]);
 
 
-    // Handle Submit
+  // Handle Submit
   const handleSubmit = async (data: CmsFormData) => {
     try {
       const formData = new FormData();
@@ -103,6 +106,7 @@ const CmsData = () => {
       formData.append("about_title", data.about_title);
       formData.append("about_description", data.about_description);
       formData.append("contact_title", data.contact_title);
+      formData.append("experience_title", data.experience_title || "");
 
       // Append image file if it's a File object
       if (data.media_path instanceof File) {
@@ -115,7 +119,7 @@ const CmsData = () => {
       }
 
       if (cmsData) {
-        await apiService.update("cms", cmsData.id, formData);
+        await apiService.update("cms", cmsData._id || cmsData.id!, formData);
         toast.success("CMS content updated successfully!");
       } else {
         await apiService.create("cms", formData, true);
@@ -151,6 +155,7 @@ const CmsData = () => {
         about_title: cmsData?.about_title || "",
         about_description: cmsData?.about_description || "",
         contact_title: cmsData?.contact_title || "",
+        experience_title: cmsData?.experience_title || "",
       });
     }
   }, [cmsData, form]);
@@ -347,7 +352,7 @@ const CmsData = () => {
                 {currentImage && (
                   <div className="mt-2">
                     <img
-                      src={`${MEDIA_URL}${currentImage}`}
+                      src={currentImage}
                       alt="Current hero image"
                       className="w-full max-w-md h-48 object-cover rounded-lg border"
                     />
@@ -429,6 +434,23 @@ const CmsData = () => {
                     <FormControl>
                       <Input
                         placeholder="e.g., Let's Build Something Amazing"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="experience_title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Experience Section Title</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., Work Experience"
                         {...field}
                       />
                     </FormControl>

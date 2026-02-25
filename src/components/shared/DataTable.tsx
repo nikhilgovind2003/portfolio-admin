@@ -35,7 +35,7 @@ interface DataTableProps<T> {
   showBorders?: boolean;
 }
 
-export function DataTable<T extends { id: string | number }>({
+export function DataTable<T extends { id?: string | number; _id?: string | number }>({
   data,
   columns,
   onEdit,
@@ -201,7 +201,7 @@ export function DataTable<T extends { id: string | number }>({
               </TableRow>
             ) : (
               sortedData.map((row, rowIndex) => (
-                <TableRow key={row.id}>
+                <TableRow key={row._id || row.id || rowIndex}>
                   {columns.map((col, colIndex) => {
                     let value;
                     if (typeof col.accessor === 'function') {
@@ -233,7 +233,7 @@ export function DataTable<T extends { id: string | number }>({
 
                       {onDelete && (
                         <DeleteDialog
-                          id={Number(row.id)}
+                          id={row._id || row.id!}
                           apiPath={apiPath || ''}
                           onSuccess={() => onDelete(row)}
                         />

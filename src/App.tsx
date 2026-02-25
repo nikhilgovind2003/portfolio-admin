@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { lazy, Suspense } from "react";
+import { FullPageSpinner } from "./components/ui/spinner";
 // import Index from "./pages/Index";
 
 const Login = lazy(() => import("./pages/Login"));
@@ -17,6 +18,7 @@ const Users = lazy(() => import("./pages/dashboard/Users"));
 const Projects = lazy(() => import("./pages/dashboard/Projects"));
 const CmsData = lazy(() => import("./pages/dashboard/CmsData"));
 const Skills = lazy(() => import("./pages/dashboard/Skills"));
+const Experience = lazy(() => import("./pages/dashboard/Experience"));
 const Technologies = lazy(() => import("./pages/dashboard/Technologies"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -30,7 +32,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <Suspense fallback={<div>Loading... </div>}>
+            <Suspense fallback={<FullPageSpinner />}>
               <Routes>
                 <Route
                   path="/"
@@ -90,6 +92,16 @@ const App = () => (
                     <ProtectedRoute>
                       <DashboardLayout>
                         <Skills />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/experience"
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <Experience />
                       </DashboardLayout>
                     </ProtectedRoute>
                   }

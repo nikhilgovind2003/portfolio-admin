@@ -5,6 +5,7 @@ import {
   FileText,
   FolderKanban,
   Lightbulb,
+  Briefcase,
   Code,
   UserCircle,
 } from 'lucide-react';
@@ -25,9 +26,10 @@ const menuItems = [
   { title: 'CMS Data', url: '/dashboard/cms', icon: FileText },
   { title: 'Projects', url: '/dashboard/projects', icon: FolderKanban },
   { title: 'Skills', url: '/dashboard/skills', icon: Lightbulb },
+  { title: 'Experience', url: '/dashboard/experience', icon: Briefcase },
   { title: 'Technologies', url: '/dashboard/technologies', icon: Code },
   { title: 'Users', url: '/dashboard/users', icon: Users },
-  // { title: 'Profile', url: '/dashboard/profile', icon: UserCircle },
+  { title: 'Profile', url: '/dashboard/profile', icon: UserCircle },
 ];
 
 export const DashboardSidebar = () => {

@@ -4,22 +4,24 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 interface User {
-  id: string;
+  id?: string;
+  _id?: string;
   email: string;
-  name: string;
+  userName: string;
   role: string;
   password?: string;
   avatar?: string;
-
+  bio?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
+  signup: (email: string, password: string, userName: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
   loading: boolean;
+  updateUser: (data: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -57,9 +59,9 @@ const login = async (email, password) => {
 };
 
 
-const signup = async (email, password, name) => {
+const signup = async (email, password, userName) => {
   try {
-    const payload = { userName: name, email, password }; // match backend!
+    const payload = { userName, email, password }; // match backend!
     const { data, error } = await apiService.signUp(payload);
     if (error) throw new Error(error);
 
@@ -82,9 +84,17 @@ const signup = async (email, password, name) => {
     toast.success('Logged out successfully');
     navigate('/login');
   };
-
+ 
+  const updateUser = (updatedUser: Partial<User>) => {
+    if (user) {
+      const newUser = { ...user, ...updatedUser };
+      setUser(newUser);
+      localStorage.setItem('user', JSON.stringify(newUser));
+    }
+  };
+ 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, isAuthenticated: !!user, loading }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, isAuthenticated: !!user, loading, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

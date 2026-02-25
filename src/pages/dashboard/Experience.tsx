@@ -7,16 +7,16 @@ import { toast } from "sonner";
 import { apiService, MEDIA_URL } from "@/api/apiService";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { skillSchema, SkillFormData } from "@/schemas/skillSchema";
-import { Skill } from "@/lib/types";
-import { skillsField } from "@/components/shared/formFields";
+import { experienceSchema, ExperienceFormData } from "@/schemas/experienceSchema";
+import { Experience as ExperienceType } from "@/lib/types";
+import { experienceField } from "@/components/shared/formFields";
 import { PaginationInfo } from "@/components/shared/Pagination";
 import { Input } from "@/components/ui/input";
 
-const Skills = () => {
-  const [skills, setSkills] = useState<Skill[]>([]);
+const Experience = () => {
+  const [experiences, setExperiences] = useState<ExperienceType[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
+  const [editingExperience, setEditingExperience] = useState<ExperienceType | null>(null);
 
   // Pagination states
   const [pagination, setPagination] = useState<PaginationInfo>({
@@ -34,40 +34,46 @@ const Skills = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<SkillFormData>({
-    resolver: zodResolver(skillSchema),
+  const form = useForm<ExperienceFormData>({
+    resolver: zodResolver(experienceSchema),
     defaultValues: {
-      name: "",
+      company: "",
+      role: "",
+      location: "",
+      start_date: "",
+      end_date: "",
+      is_current: false,
+      description: "",
       media_path: "",
       media_alt: "",
       status: true,
-      sort_order: 1,
+      sort_order: 0,
     },
   });
 
-  // Fetch skills with pagination
-  const fetchSkills = useCallback(async () => {
+  // Fetch experiences with pagination
+  const fetchExperiences = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await apiService.getAll("skills", {
+      const response = await apiService.getAll("experiences", {
         page: currentPage,
         limit: limit,
         search: searchQuery,
       });
-      setSkills(response.data || []);
+      setExperiences(response.data || []);
       setPagination(response.pagination);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to load skills");
-      setSkills([]);
+      toast.error("Failed to load experiences");
+      setExperiences([]);
     } finally {
       setIsLoading(false);
     }
   }, [currentPage, limit, searchQuery]);
 
   useEffect(() => {
-    fetchSkills();
-  }, [fetchSkills]);
+    fetchExperiences();
+  }, [fetchExperiences]);
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -77,96 +83,111 @@ const Skills = () => {
   // Handle limit change
   const handleLimitChange = (newLimit: number) => {
     setLimit(newLimit);
-    setCurrentPage(1); // Reset to first page when limit changes
+    setCurrentPage(1);
   };
 
   // Handle search
   const handleSearch = (value: string) => {
     setSearchQuery(value);
-    setCurrentPage(1); // Reset to first page when searching
+    setCurrentPage(1);
   };
 
   // Submit (create or update)
-  const handleSubmit = async (data: SkillFormData) => {
+  const handleSubmit = async (data: ExperienceFormData) => {
     try {
       const formData = new FormData();
-      formData.append("skills", data.name);
-      formData.append("media_alt", data.media_alt);
+      formData.append("company", data.company);
+      formData.append("role", data.role);
+      if (data.location) formData.append("location", data.location);
+      formData.append("start_date", data.start_date);
+      if (data.end_date) formData.append("end_date", data.end_date);
+      formData.append("is_current", data.is_current ? "true" : "false");
+      formData.append("description", data.description);
+      if (data.media_alt) formData.append("media_alt", data.media_alt);
       formData.append("sort_order", data.sort_order.toString());
       formData.append("status", data.status ? "true" : "false");
+
       if (data.media_path instanceof File)
         formData.append("media_path", data.media_path);
 
-      if (editingSkill) {
-        await apiService.update("skills", editingSkill._id || editingSkill.id!, formData);
-        toast.success("Skill updated successfully!");
+      if (editingExperience) {
+        await apiService.update("experiences", editingExperience._id, formData);
+        toast.success("Experience updated successfully!");
       } else {
-        await apiService.create("skills", formData, true);
-        toast.success("Skill added successfully!");
+        await apiService.create("experiences", formData, true);
+        toast.success("Experience added successfully!");
       }
 
-      // Refetch to get updated paginated data
-      await fetchSkills();
+      await fetchExperiences();
       setIsDialogOpen(false);
       resetForm();
     } catch (error) {
-      console.error("Error saving skill:", error);
-      toast.error("Failed to save skill. Please try again.");
+      console.error("Error saving experience:", error);
+      toast.error("Failed to save experience. Please try again.");
     }
   };
 
   // Edit
-  const handleEdit = (skill: Skill) => {
-    setEditingSkill(skill);
+  const handleEdit = (exp: ExperienceType) => {
+    setEditingExperience(exp);
     setIsDialogOpen(true);
     form.reset({
-      name: skill.skills,
-      media_path: skill.media_path || "",
-      media_alt: skill.media_alt || "",
-      status: skill.status,
-      sort_order: skill.sort_order,
+      company: exp.company,
+      role: exp.role,
+      location: exp.location || "",
+      start_date: exp.start_date ? new Date(exp.start_date).toISOString().split('T')[0] : "",
+      end_date: exp.end_date ? new Date(exp.end_date).toISOString().split('T')[0] : "",
+      is_current: exp.is_current,
+      description: exp.description,
+      media_path: exp.media_path || "",
+      media_alt: exp.media_alt || "",
+      status: exp.status,
+      sort_order: exp.sort_order,
     });
   };
 
-  // Delete with backend API call and refetch
-  const handleDelete = async (skill: Skill) => {
+  // Delete
+  const handleDelete = async (exp: ExperienceType) => {
     try {
-      // await apiService.remove("skills", Number(skill.id));
-      // toast.success("Skill deleted successfully!");
-      // Refetch to update pagination
-      await fetchSkills();
+      // await apiService.remove("experience", exp.id); // If id is number
+      // But wait, the Skill.id in original code was number, but API usually uses ObjectId
+      // Let's assume remove works with string too if needed.
+      // toast.success("Experience deleted successfully!");
+      await fetchExperiences();
     } catch (error) {
       console.error(error);
-      toast.error("Failed to delete skill");
+      toast.error("Failed to delete experience");
     }
   };
 
   const resetForm = () => {
     form.reset({
-      name: "",
+      company: "",
+      role: "",
+      location: "",
+      start_date: "",
+      end_date: "",
+      is_current: false,
+      description: "",
       media_path: "",
       media_alt: "",
       status: true,
-      sort_order: 1,
+      sort_order: 0,
     });
-    setEditingSkill(null);
+    setEditingExperience(null);
   };
 
   const columns = [
     {
       header: "ID",
       accessor: "id",
-      sortable: true,
       width: "60px",
       cell: (_value: any, _row: any, index: number) => index + 1,
     },
     {
-      header: "Image",
+      header: "Logo",
       accessor: "media_path",
-      cell: (value: string, row: Skill) => {
-
-        console.log(`${MEDIA_URL}${value}`)
-
+      cell: (value: string, row: ExperienceType) => {
         return value ? (
           <img
             src={value}
@@ -175,12 +196,22 @@ const Skills = () => {
           />
         ) : (
           <div className="w-12 h-12 bg-gray-100 flex items-center justify-center text-xs text-gray-400 border">
-            No Image
+            No Logo
           </div>
         );
       },
     },
-    { header: "Name", accessor: "skills", sortable: true },
+    { header: "Company", accessor: "company", sortable: true },
+    { header: "Role", accessor: "role", sortable: true },
+    {
+      header: "Duration",
+      accessor: "start_date",
+      cell: (_value: any, row: ExperienceType) => {
+        const start = new Date(row.start_date).toLocaleDateString();
+        const end = row.is_current ? "Present" : row.end_date ? new Date(row.end_date).toLocaleDateString() : "";
+        return `${start} - ${end}`;
+      }
+    },
     { header: "Sort Order", accessor: "sort_order" },
     {
       header: "Status",
@@ -198,8 +229,8 @@ const Skills = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Skills</h1>
-          <p className="text-muted-foreground">Manage your skills</p>
+          <h1 className="text-3xl font-bold">Experience</h1>
+          <p className="text-muted-foreground">Manage your work experience</p>
         </div>
         <Button
           onClick={() => {
@@ -207,16 +238,15 @@ const Skills = () => {
             setIsDialogOpen(true);
           }}
         >
-          <Plus className="mr-2 h-4 w-4" /> Add Skill
+          <Plus className="mr-2 h-4 w-4" /> Add Experience
         </Button>
       </div>
 
-      {/* Search bar like projects */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search skills..."
+            placeholder="Search experience..."
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
             className="pl-9"
@@ -224,18 +254,18 @@ const Skills = () => {
         </div>
       </div>
 
-      <DataTable<Skill>
-        data={skills}
+      <DataTable<ExperienceType>
+        data={experiences}
         columns={columns}
         onEdit={handleEdit}
-        apiPath="skills"
+        apiPath="experiences"
         onDelete={handleDelete}
         pagination={pagination}
         onPageChange={handlePageChange}
         onLimitChange={handleLimitChange}
         isLoading={isLoading}
-        enableSearch={false} // We handle search externally here
-        showBorders={true} // controls border visibility
+        enableSearch={false}
+        showBorders={true}
       />
 
       <FormDialog
@@ -244,19 +274,19 @@ const Skills = () => {
           setIsDialogOpen(open);
           if (!open) resetForm();
         }}
-        title={editingSkill ? "Edit Skill" : "Add New Skill"}
-        description={editingSkill ? "Update skill details" : "Add a new skill"}
+        title={editingExperience ? "Edit Experience" : "Add New Experience"}
+        description={editingExperience ? "Update experience details" : "Add a new work experience"}
         form={form}
         onSubmit={handleSubmit}
         onCancel={() => {
           setIsDialogOpen(false);
           resetForm();
         }}
-        submitLabel={editingSkill ? "Update" : "Create"}
-        fields={skillsField}
+        submitLabel={editingExperience ? "Update" : "Create"}
+        fields={experienceField}
       />
     </div>
   );
 };
 
-export default Skills;
+export default Experience;

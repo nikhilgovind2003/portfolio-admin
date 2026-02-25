@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "https://portfolio-api-0cc6.onrender.com/api";
+  import.meta.env.VITE_API_URL
 export const MEDIA_URL = `${import.meta.env.VITE_MEDIA_API_URL}`;
 
 export const apiService = {
@@ -22,9 +22,8 @@ export const apiService = {
     if (params?.status !== undefined)
       queryParams.append("status", String(params.status));
 
-    const url = `${API_BASE_URL}/${model}${
-      queryParams.toString() ? `?${queryParams}` : ""
-    }`;
+    const url = `${API_BASE_URL}/${model}${queryParams.toString() ? `?${queryParams}` : ""
+      }`;
     const { data } = await axios.get(url);
     return data;
   },
@@ -49,7 +48,7 @@ export const apiService = {
     return data;
   },
 
-  async remove(path: string, id: number) {
+  async remove(path: string, id: string | number) {
     const response = await fetch(`${API_BASE_URL}/${path}/${id}`, {
       method: "DELETE",
     });
@@ -75,26 +74,26 @@ export const apiService = {
 
     const response = await axios.post(`${API_BASE_URL}/auth/login`, payload, config);
 
-    if(response.status !== 200){
-      return {data:null, error: 'Login failed'};
+    if (response.status !== 200) {
+      return { data: null, error: 'Login failed' };
     }
-    return {data: response.data, error: null};
+    return { data: response.data, error: null };
 
   },
 
-     signUp: async (payload: object) => {
+  signUp: async (payload: object) => {
 
     const config = {
       headers: { "Content-Type": "application/json" },
     };
 
     const response = await axios.post(`${API_BASE_URL}/auth/register`, payload, config);
-       if (response.status !== 201) {
-         return {data:null, error: 'Registration failed'};
-       }
+    if (response.status !== 201) {
+      return { data: null, error: 'Registration failed' };
+    }
 
-        return {data: response.data, error: null};
+    return { data: response.data, error: null };
   },
-    
-    
+
+
 };

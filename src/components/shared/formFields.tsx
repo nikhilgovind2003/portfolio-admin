@@ -49,3 +49,20 @@ export const cmsDataField: FormFieldConfig[] = [
   
   { name: "contact_title", label: "Contact Title", type: "text", placeholder: "Enter contact section title" },
 ];
+
+
+
+// show end date if is_current is false
+export const experienceField: FormFieldConfig[] = [
+  { name: "company", label: "Company", type: "text", placeholder: "Company name" },
+  { name: "role", label: "Role", type: "text", placeholder: "Job title" },
+  { name: "location", label: "Location", type: "text", placeholder: "City, Country" },
+  { name: "start_date", label: "Start Date", type: "date", placeholder: "YYYY-MM-DD" }, // Assuming date for now, maybe date?
+  { name: "end_date", label: "End Date", type: "date", placeholder: "YYYY-MM-DD (leave empty if current)", showIf: (values) => !values.is_current },
+  { name: "is_current", label: "Is Current", type: "switch" },
+  { name: "description", label: "Description", type: "textarea", placeholder: "Responsibilities...", rows: 4 },
+  { name: "media_path", label: "Company Logo", type: "file", accept: "image/*" },
+  { name: "media_alt", label: "Logo Alt Text", type: "text", placeholder: "Alt text" },
+  { name: "sort_order", label: "Sort Order", type: "number", placeholder: "0" },
+  { name: "status", label: "Status", type: "switch" },
+];
