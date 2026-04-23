@@ -7,8 +7,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { UseFormReturn } from 'react-hook-form';
 import { Switch } from "@/components/ui/switch";
+import RichTextEditor from './RichTextEditor';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { Check, ChevronsUpDown, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { MEDIA_URL } from '@/api/apiService';
 
-export type FormFieldType = 'text' | 'email' | 'date' | 'password' | 'textarea' | 'select' | 'number' | 'url' | 'file' | "switch" | 'multiselect';
+export type FormFieldType = 'text' | 'email' | 'date' | 'password' | 'textarea' | 'select' | 'number' | 'url' | 'file' | "switch" | 'multiselect' | 'richText';
 
 export interface FormFieldConfig {
   name: string;
@@ -94,7 +102,7 @@ export const FormDialog = ({
                                         typeof formField.value === 'string'
                                           ? formField.value.startsWith('http')
                                             ? formField.value
-                                            : `https://portfolio-api-0cc6.onrender.com${formField.value}`
+                                          : `${MEDIA_URL}${formField.value}`
                                           : ''
                                       }
                                       alt="Preview"
@@ -106,42 +114,61 @@ export const FormDialog = ({
                             </>
                           ) :
                             field.type === "multiselect" && field.options ? (
-                              <div className="space-y-2">
+                              <div className="space-y-3">
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      role="combobox"
+                                      className="w-full justify-between font-normal"
+                                    >
+                                      {formField.value?.length > 0
+                                        ? `${formField.value.length} selected`
+                                        : field.placeholder}
+                                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                    <Command>
+                                      <CommandInput placeholder={`Search ${field.label.toLowerCase()}...`} />
+                                      <CommandList>
+                                        <CommandEmpty>No results found.</CommandEmpty>
+                                        <CommandGroup>
+                                          {field.options.map((option) => (
+                                            <CommandItem
+                                              key={option.value}
+                                              value={option.label}
+                                              onSelect={() => {
+                                                const current = formField.value || [];
+                                                const updated = current.includes(option.value)
+                                                  ? current.filter((v: string) => v !== option.value)
+                                                  : [...current, option.value];
+                                                formField.onChange(updated);
+                                              }}
+                                              className="flex items-center gap-2 cursor-pointer"
+                                            >
+                                              <Checkbox 
+                                                checked={formField.value?.includes(option.value)}
+                                                onCheckedChange={() => {}} // Handled by CommandItem onSelect
+                                              />
+                                              {option.label}
+                                            </CommandItem>
+                                          ))}
+                                        </CommandGroup>
+                                      </CommandList>
+                                    </Command>
+                                  </PopoverContent>
+                                </Popover>
 
-                                {/* Dropdown */}
-                                <Select
-                                  onValueChange={(value) => {
-                                    const current = formField.value || [];
-
-                                    const updated = current.includes(value)
-                                      ? current.filter((v: string) => v !== value)
-                                      : [...current, value];
-
-                                    formField.onChange(updated);
-                                  }}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder={field.placeholder} />
-                                  </SelectTrigger>
-
-                                  <SelectContent>
-                                    {field.options.map((option) => (
-                                      <SelectItem key={option.value} value={option.value}>
-                                        {formField.value?.includes(option.value) ? "☑ " : "⬜ "}
-                                        {option.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-
-                                {/* Show selected chips */}
+                                {/* Selected items as badges */}
                                 <div className="flex flex-wrap gap-2">
                                   {formField.value?.map((v: string) => {
                                     const opt = field.options!.find((o) => o.value === v);
                                     return (
-                                      <div
+                                      <Badge
                                         key={v}
-                                        className="px-3 py-1 rounded-full bg-gray-100 border text-sm flex items-center gap-1"
+                                        variant="secondary"
+                                        className="py-1 px-3 bg-blue-100 hover:bg-blue-200 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800 flex items-center gap-1 group transition-colors"
                                       >
                                         {opt?.label}
                                         <button
@@ -151,11 +178,11 @@ export const FormDialog = ({
                                               formField.value.filter((x: string) => x !== v)
                                             )
                                           }
-                                          className="text-red-500 font-bold"
+                                          className="text-blue-500 hover:text-red-500 transition-colors"
                                         >
-                                          ×
+                                          <X size={14} />
                                         </button>
-                                      </div>
+                                      </Badge>
                                     );
                                   })}
                                 </div>
@@ -176,6 +203,12 @@ export const FormDialog = ({
                                   placeholder={field.placeholder}
                                   rows={field.rows || 4}
                                   {...formField}
+                                />
+                              ) : field.type === 'richText' ? (
+                                <RichTextEditor
+                                  placeholder={field.placeholder}
+                                  value={formField.value}
+                                  onChange={formField.onChange}
                                 />
                               ) : field.type === 'select' && field.options ? (
                                 <Select onValueChange={formField.onChange} value={formField.value}>

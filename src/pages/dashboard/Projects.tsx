@@ -13,6 +13,7 @@ import { projectField } from "@/components/shared/formFields";
 import { apiService, MEDIA_URL } from "@/api/apiService";
 import { PaginationInfo } from "@/components/shared/Pagination";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -178,7 +179,7 @@ const Projects = () => {
       description: project.description || "",
       technology_ids: project.technology_ids || [],
       project_link: project.project_link || "",
-      // media_path: project.media_path || "",
+      media_path: project.media_path || "",
       github_link: project.github_link || "",
       sort_order: project.sort_order || 1,
       status: project.status ?? true,
@@ -255,8 +256,20 @@ const Projects = () => {
       header: "Technologies",
       accessor: "technology_ids",
       cell: (value: string[]) => {
-        if (!value || value.length === 0) return "No Tech";
-        return value.map((id) => techMap[id] || id).join(", ");
+        if (!value || value.length === 0) return <span className="text-muted-foreground italic">None</span>;
+        return (
+          <div className="flex flex-wrap gap-1">
+            {value.map((id) => (
+              <Badge 
+                key={id} 
+                variant="outline" 
+                className="bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800 text-[10px] py-0 px-2"
+              >
+                {techMap[id] || id}
+              </Badge>
+            ))}
+          </div>
+        );
       },
     },
     {

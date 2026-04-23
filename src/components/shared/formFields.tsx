@@ -11,7 +11,7 @@ export const skillsField: FormFieldConfig[] = [
 
 export const projectField: FormFieldConfig[] = [
   { name: 'title', label: 'Title', type: 'text', placeholder: 'Project name' },
-  { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Detailed description...', rows: 4 },
+  { name: 'description', label: 'Description', type: 'richText', placeholder: 'Detailed description...' },
  { name: 'technology_ids', label: 'Technologies', type: 'multiselect', placeholder: 'Select technologies' },
   { name: 'media_path', label: 'Media Path', type: 'file', accept: '/images/*' },
   { name: "media_alt", label: "Alt Text", type: "text", placeholder: "Alt text" },
@@ -30,7 +30,7 @@ export const technologyField: FormFieldConfig[] = [
 export const cmsDataField: FormFieldConfig[] = [
   { name: "super_title", label: "Super Title", type: "text", placeholder: "Enter super title" },
   { name: "title", label: "Title", type: "text", placeholder: "Enter title" },
-  { name: "description", label: "Description", type: "textarea", placeholder: "Enter description" },
+  { name: "description", label: "Description", type: "richText", placeholder: "Enter description" },
   
   { name: "btn_one_text", label: "Button One Text", type: "text", placeholder: "Button text" },
   { name: "btn_one_link", label: "Button One Link", type: "text", placeholder: "Button link URL" },
@@ -45,7 +45,7 @@ export const cmsDataField: FormFieldConfig[] = [
   { name: "skills_title", label: "Skills Title", type: "text", placeholder: "Enter skills title" },
   
   { name: "about_title", label: "About Title", type: "text", placeholder: "Enter about section title" },
-  { name: "about_description", label: "About Description", type: "textarea", placeholder: "Enter about description" },
+  { name: "about_description", label: "About Description", type: "richText", placeholder: "Enter about description" },
   
   { name: "contact_title", label: "Contact Title", type: "text", placeholder: "Enter contact section title" },
 ];
@@ -60,7 +60,7 @@ export const experienceField: FormFieldConfig[] = [
   { name: "start_date", label: "Start Date", type: "date", placeholder: "YYYY-MM-DD" }, // Assuming date for now, maybe date?
   { name: "end_date", label: "End Date", type: "date", placeholder: "YYYY-MM-DD (leave empty if current)", showIf: (values) => !values.is_current },
   { name: "is_current", label: "Is Current", type: "switch" },
-  { name: "description", label: "Description", type: "textarea", placeholder: "Responsibilities...", rows: 4 },
+  { name: "description", label: "Description", type: "richText", placeholder: "Responsibilities..." },
   { name: "media_path", label: "Company Logo", type: "file", accept: "image/*" },
   { name: "media_alt", label: "Logo Alt Text", type: "text", placeholder: "Alt text" },
   { name: "sort_order", label: "Sort Order", type: "number", placeholder: "0" },
